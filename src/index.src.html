@@ -82,6 +82,8 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .titlebg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at top,#2a3a78,#0b0f1d 70%)}
 .titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.4);opacity:0;transition:opacity 1.2s ease}
 .titlebg .yt.on{opacity:1}
+.titlebg .thumb{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.4);opacity:0;transition:opacity .6s ease}
+.titlebg .thumb.on{opacity:1}
 .titlebg .yt iframe{width:100%;height:100%;border:0;pointer-events:none}
 .titlebg .shade{position:absolute;inset:0;background:linear-gradient(#0b0f1d99,#0b0f1dcc)}
 #screen{isolation:isolate}
@@ -1039,8 +1041,15 @@ function monCard(r,key,opts={}){
 // ---------- title video ----------
 // Uses the YouTube player API so the video stays invisible until it is actually playing:
 // no play button, no loading spinner. Edges are cropped (scale 1.3) to hide the title bar and logo.
-let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=6000;
+let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=4500;
+function showTitleThumb(){
+  const el=document.querySelector('.titlebg .thumb'); if(!el) return;
+  const set=u=>{el.style.backgroundImage=`url(${u})`; el.classList.add('on');};
+  const im=new Image(); im.onload=()=>set(im.naturalWidth>200?im.src:`https://i.ytimg.com/vi/${TITLE_VIDEO}/hqdefault.jpg`);
+  im.src=`https://i.ytimg.com/vi/${TITLE_VIDEO}/maxresdefault.jpg`;
+}
 function startTitleVideo(){
+  showTitleThumb();
   const make=()=>{ const el=document.getElementById('ytbg'); if(!el) return;
     titlePlayer=new YT.Player(el,{videoId:TITLE_VIDEO,host:'https://www.youtube-nocookie.com',
       playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0},
@@ -1049,12 +1058,14 @@ function startTitleVideo(){
         onStateChange:e=>{ const box=document.querySelector('.titlebg .yt'); if(!box) return;
           // YouTube shows its own controls for the first few seconds of playback. Play hidden until they
           // fade, then rewind to the start and fade the video in.
-          if(e.data===YT.PlayerState.PLAYING&&!box.dataset.warm){ box.dataset.warm='1';
-            setTimeout(()=>{ try{ e.target.seekTo(0,true); }catch(err){} setTimeout(()=>box.classList.add('on'),250); },TITLE_WARMUP); }
-          if(e.data===YT.PlayerState.ENDED){ e.target.seekTo(0,true); e.target.playVideo(); } } }});
-    // Loop just before the end so YouTube never shows its end screen or reloads (which brings controls back).
-    clearInterval(titleLoop); titleLoop=setInterval(()=>{ try{ if(!document.querySelector('.titlebg')){clearInterval(titleLoop);return;}
-      const d=titlePlayer.getDuration(), t=titlePlayer.getCurrentTime(); if(d&&t>d-1.2) titlePlayer.seekTo(0,true); }catch(err){} },400);
+          // YouTube flashes its own controls whenever playback (re)starts. Keep the video hidden behind the
+          // thumbnail through that window, then crossfade in. No seeking, so the controls don't come back.
+          if(e.data===YT.PlayerState.PLAYING&&!box.dataset.warm){ box.dataset.warm='1'; setTimeout(()=>box.classList.add('on'),TITLE_WARMUP); }
+          if(e.data===YT.PlayerState.ENDED){ box.classList.remove('on'); box.dataset.warm=''; e.target.seekTo(0,true); e.target.playVideo(); } } }});
+    // Loop: just before the end, crossfade back to the thumbnail, restart hidden, fade in once controls are gone.
+    clearInterval(titleLoop); titleLoop=setInterval(()=>{ try{ const box=document.querySelector('.titlebg .yt'); if(!box){clearInterval(titleLoop);return;}
+      const d=titlePlayer.getDuration(), t=titlePlayer.getCurrentTime();
+      if(d&&t>d-1.5&&box.dataset.warm){ box.classList.remove('on'); box.dataset.warm=''; setTimeout(()=>{ try{ titlePlayer.seekTo(0,true); titlePlayer.playVideo(); }catch(err){} },700); } }catch(err){} },300);
   };
   if(window.YT&&YT.Player) make();
   else { window.onYouTubeIframeAPIReady=make;
@@ -1069,7 +1080,7 @@ function showRoutes(){
     return `<button class="pick" data-rt="${rt.id}" style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${R.region} vs ${REGIONS[rt.foe].region}</div>
       <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`${portrait(sk,false,'Normal','p40')}`).join('')}</div>
       <div class="pick-s">${sv?`Saved · ${sv.cleared.filter(Boolean).length}/${CHAPTERS.length} chapters · ${Object.keys(sv.roster).length} Pokémon`:rt.blurb}</div></button>`;};
-  showScreen(`<div class="titlebg"><div class="yt"><div id="ytbg"></div></div><div class="shade"></div></div>
+  showScreen(`<div class="titlebg"><div class="thumb"></div><div class="yt"><div id="ytbg"></div></div><div class="shade"></div></div>
     <button id="snd" class="sndbtn">🔇 Sound</button><div class="ver">build ${BUILD}</div>
     <h1 class="st">Pokémon <span>War</span></h1><h2>Choose your army</h2><div class="picks">${ROUTES.map(card).join('')}</div>
     <p class="note">Each army recruits only its own region's Pokémon. Progress saves in this browser.</p>`);
