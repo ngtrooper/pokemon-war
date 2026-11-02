@@ -59,7 +59,7 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .fc .big{font-size:18px;font-weight:600}
 .row{display:flex;gap:8px;margin-top:8px}
 .row button{flex:1}
-#menu{position:absolute;display:none;flex-direction:column;gap:4px;background:rgba(20,27,55,.95);border:2px solid var(--edge);border-radius:8px;padding:6px;line-height:normal;z-index:5;min-width:110px}
+#menu{position:absolute;display:none;flex-direction:column;gap:4px;max-height:calc(100% - 12px);overflow-y:auto;background:rgba(20,27,55,.95);border:2px solid var(--edge);border-radius:8px;padding:6px;line-height:normal;z-index:5;min-width:110px}
 #menu button{text-align:left}
 #banner{position:absolute;left:0;right:0;top:40%;text-align:center;font-size:42px;font-weight:700;letter-spacing:4px;pointer-events:none;opacity:0;line-height:1.4;text-shadow:0 3px 0 #000a}
 #banner.show{animation:ban 1.2s ease-in-out}
@@ -82,9 +82,9 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 #screen{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at top,#1d2750,#0b0f1d 70%);overflow:auto;display:none}
 .scr{position:relative;max-width:1000px;margin:0 auto;padding:18px 14px 40px;text-align:center}
 .titlebg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at top,#2a3a78,#0b0f1d 70%)}
-.titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.4);opacity:0;transition:opacity 1.2s ease}
+.titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.55);opacity:0;transition:opacity .8s ease}
 .titlebg .yt.on{opacity:1}
-.titlebg .thumb{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.4);opacity:0;transition:opacity .6s ease}
+.titlebg .thumb{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.55);opacity:0;transition:opacity .6s ease}
 .titlebg .thumb.on{opacity:1}
 .titlebg .yt iframe{width:100%;height:100%;border:0;pointer-events:none}
 .titlebg .shade{position:absolute;inset:0;background:linear-gradient(#0b0f1d99,#0b0f1dcc)}
@@ -131,7 +131,7 @@ button.pool{color:var(--ink);cursor:pointer}button.pool:hover{border-color:var(-
 .sb span{color:var(--mute)}.sb i{display:block;height:8px;background:#0b1020;border-radius:4px;overflow:hidden}.sb u{display:block;height:100%;background:linear-gradient(90deg,#4aa3ff,#7dff9e)}
 .sb em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}.tml{display:flex;flex-wrap:wrap;gap:4px}
 /* FE-style battle forecast window on the map */
-#fcpop{position:absolute;display:none;z-index:6;line-height:normal;width:270px;background:linear-gradient(180deg,#1d2a5c,#141c3d);border:2px solid var(--edge);border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px #0009}
+#fcpop{position:absolute;display:none;z-index:6;line-height:normal;width:270px;max-width:calc(100% - 12px);max-height:calc(100% - 12px);overflow-y:auto;background:linear-gradient(180deg,#1d2a5c,#141c3d);border:2px solid var(--edge);border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px #0009}
 #fcpop .vs{display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;text-align:center;gap:2px 4px;font-size:16px}
 #fcpop .vs .nm{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #fcpop .vs .lb{color:var(--mute);font-size:12px;background:#0d1430;border-radius:4px;padding:1px 0}
@@ -141,6 +141,7 @@ button.pool{color:var(--ink);cursor:pointer}button.pool:hover{border-color:var(-
 #fcpop .mvs .mn{flex:1;text-align:center;font-size:14px}
 #fcpop .ctr{font-size:12px;color:var(--mute);text-align:center;margin-top:3px}
 #fcpop .row{margin-top:6px}
+#fcpop.sheet{position:fixed;left:8px;right:8px;bottom:8px;top:auto;width:auto;max-width:520px;margin:0 auto;max-height:70vh;z-index:30}
 #fcpop .keys{font-size:11px;color:var(--mute);text-align:center;margin-top:4px}
 #hint{position:absolute;left:8px;bottom:8px;z-index:4;line-height:normal;background:#0b1020cc;border:1px solid #33406e;border-radius:6px;padding:3px 9px;font-size:13px;color:#cfd6f5;pointer-events:none;max-width:70%}
 #hint:empty{display:none}
@@ -157,6 +158,7 @@ button.pool{color:var(--ink);cursor:pointer}button.pool:hover{border-color:var(-
 footer{margin-top:10px;color:var(--mute);font-size:13px;line-height:1.5}
 footer b{color:var(--ink);font-weight:600}
 @media (max-width:860px){#main{flex-direction:column}aside{width:100%}}
+@media (max-width:600px){#hint{display:none}#fcpop{width:230px;padding:6px 8px}#fcpop .vs{font-size:14px}#fcpop .vs .big{font-size:16px}#fcpop .keys{display:none}}
 </style>
 </head>
 <body>
@@ -607,7 +609,7 @@ const CHAPTERS = [
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
 ];
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
-const BUILD='2026-11-02 00:28';
+const BUILD='2026-11-02 11:40';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
 const REPLAY_PAY=.3;
@@ -1137,8 +1139,7 @@ function renderFcPop(){
     <div class="row"><button id="fpBack">Back</button><button id="fpGo" class="primary">⚔ Attack</button></div>
     <div class="keys">◀ ▶ move · ▲ ▼ target · Enter attack · Esc back</div>`;
   const sx=(d.x+1.15)/MW*100, left=d.x>=MW/2?((d.x-0.15)/MW*100):sx;
-  pop.style.left=left+'%'; pop.style.transform=d.x>=MW/2?'translateX(-100%)':'none';
-  pop.style.top=Math.max(1,Math.min(42,(d.y-1.5)/MH*100))+'%'; pop.style.display='block';
+  pop.style.display='block'; placeOverlay(pop,d.x,d.y);
   document.getElementById('fpL').onclick=()=>cycleMove(-1); document.getElementById('fpR').onclick=()=>cycleMove(1);
   document.getElementById('fpBack').onclick=cancel; document.getElementById('fpGo').onclick=confirmAttack;
 }
@@ -1169,13 +1170,31 @@ function showMenu(u){
   const can=targetsFrom(u,u.x,u.y).length>0;
   menu.innerHTML=`${can?'<button data-a="attack">⚔ Attack</button>':''}<button data-a="items">Items</button><button data-a="wait">Wait</button><button data-a="cancel">Cancel</button>`;
   const left=((u.x+1.1)*T/(MW*T))*100, top=(u.y*T/(MH*T))*100;
-  menu.style.left=(u.x>MW-4?((u.x-2.7)*T/(MW*T))*100:left)+'%'; menu.style.top=Math.min(top,72)+'%'; menu.style.display='flex';
+  menu.style.display='flex'; placeOverlay(menu,u.x,u.y);
   const fb=menu.querySelector('button'); if(fb) fb.classList.add('kf');
   menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
     if(a==='attack'){startTargeting();}
     else if(a==='items'){state='items';itemSel=u.equip;hideMenu();renderForecast();}
     else if(a==='wait'){afterAction(u);}
     else cancel();});
+}
+// Put a menu/forecast window where it covers the fewest Pokémon: never the possible targets or the selected unit if avoidable.
+function placeOverlay(el,ax,ay){
+  const st=document.getElementById('stage'), W=st.clientWidth, H=st.clientHeight;
+  // Small screens: the map is too short for the forecast, so it docks to the bottom of the screen instead of covering the map.
+  if(el.id==='fcpop'){ el.classList.toggle('sheet',W<620||H<360); if(el.classList.contains('sheet')){ el.style.left=el.style.top=''; el.style.transform='none'; return; } }
+  const ts=W/MW, w=el.offsetWidth, h=el.offsetHeight, m=6;
+  const tgt=new Set(sel?targetsFrom(sel,sel.x,sel.y):[]);
+  const cands=[[(ax+1.15)*ts,(ay-0.4)*ts],[(ax-0.15)*ts-w,(ay-0.4)*ts],[(ax+0.5)*ts-w/2,(ay+1.15)*ts],[(ax+0.5)*ts-w/2,(ay-0.15)*ts-h],
+    [m,m],[W-w-m,m],[m,H-h-m],[W-w-m,H-h-m],[(W-w)/2,m],[(W-w)/2,H-h-m]];
+  let best=null;
+  cands.forEach(([x,y],i)=>{ x=clamp(x,m,W-w-m); y=clamp(y,m,H-h-m);
+    const x0=Math.floor(x/ts), x1=Math.floor((x+w)/ts), y0=Math.floor(y/ts), y1=Math.floor((y+h)/ts); let sc=i*0.4;
+    for(const u of units){ if(!u.alive||u.x<x0||u.x>x1||u.y<y0||u.y>y1) continue; sc+=u===target?200:tgt.has(u)?60:u===sel?40:u.team==='e'?12:6; }
+    if(!best||sc<best.sc) best={x,y,sc}; });
+  el.style.left=best.x+'px'; el.style.top=best.y+'px'; el.style.transform='none';
+  // keep the buttons on screen (small phones, scrolled pages)
+  requestAnimationFrame(()=>{ const r=el.getBoundingClientRect(); if(r.bottom>innerHeight||r.top<0) el.scrollIntoView({block:'nearest',behavior:'smooth'}); });
 }
 function hideMenu(){menu.style.display='none';}
 const popup=document.getElementById('popup');
@@ -1388,7 +1407,7 @@ function monCard(r,key,opts={}){
 // ---------- title video ----------
 // Uses the YouTube player API so the video stays invisible until it is actually playing:
 // no play button, no loading spinner. Edges are cropped (scale 1.3) to hide the title bar and logo.
-let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=3000;
+let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=1500;
 function showTitleThumb(){
   const el=document.querySelector('.titlebg .thumb'); if(!el) return;
   const set=u=>{el.style.backgroundImage=`url(${u})`; el.classList.add('on');};
