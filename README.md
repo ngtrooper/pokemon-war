@@ -5,7 +5,7 @@ A Fire Emblem–style tactics game with Pokémon Mystery Dungeon sprites. Combat
 **Play:** https://ngtrooper.github.io/pokemon-war/
 
 ## What's in it
-- Two routes: **Red Army** (Kanto) vs **Green Army** (Johto), 4 chapters each with rising difficulty
+- Two armies: **Red Army** (Kanto) vs **Green Army** (Johto), 4 chapters each with rising difficulty
 - Moves as weapons: Power, Hit, Crit, Range, PP; equip from the Items menu
 - Physical/special damage split; type matchups shift Hit (+20 / −20) and damage (+10% / −10%)
 - Same-type moves get +15 Hit; FE-style two-roll hit chance (the forecast shows the true %)

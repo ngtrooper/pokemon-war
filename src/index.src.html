@@ -295,8 +295,8 @@ const REGIONS = {
     bosses:['sudowoodo','heracross','ursaring','steelix']},
 };
 const ROUTES = [
-  {id:'red',  name:'Red Route',  team:'Red Army',  col:'#ff5d5d', you:'kanto', foe:'johto', foeName:'Green Army', foeCol:'#4fd06a', blurb:'Kanto’s Red Army marches on Johto.'},
-  {id:'green',name:'Green Route',team:'Green Army',col:'#4fd06a', you:'johto', foe:'kanto', foeName:'Red Army',   foeCol:'#ff5d5d', blurb:'Johto’s Green Army pushes back against Kanto.'},
+  {id:'red',  name:'Red Army',  team:'Red Army',  col:'#ff5d5d', you:'kanto', foe:'johto', foeName:'Green Army', foeCol:'#4fd06a', blurb:'Kanto’s Red Army marches on Johto.'},
+  {id:'green',name:'Green Army',team:'Green Army',col:'#4fd06a', you:'johto', foe:'kanto', foeName:'Red Army',   foeCol:'#ff5d5d', blurb:'Johto’s Green Army pushes back against Kanto.'},
   {id:'hoenn',name:'Hoenn',      col:'#5aa0ff', locked:true, blurb:'Coming soon.'},
 ];
 // Chapters are shared by both routes; enemy roles resolve to the rival region's Pokémon.
@@ -902,13 +902,13 @@ function showRoutes(){
   route=null; units=[]; draw();
   const card=rt=>{ if(rt.locked) return `<button class="pick" disabled style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${rt.blurb}</div></button>`;
     const R=REGIONS[rt.you], sv=SAVES[rt.id];
-    return `<button class="pick" data-rt="${rt.id}" style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${rt.team} · ${R.region} vs ${REGIONS[rt.foe].region}</div>
+    return `<button class="pick" data-rt="${rt.id}" style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${R.region} vs ${REGIONS[rt.foe].region}</div>
       <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`<img src="${portraitOf(sk,false)}">`).join('')}</div>
       <div class="pick-s">${sv?`Saved · ${sv.cleared.filter(Boolean).length}/${CHAPTERS.length} chapters · ${Object.keys(sv.roster).length} Pokémon`:rt.blurb}</div></button>`;};
   showScreen(`<div class="titlebg"><iframe id="ytbg" src="https://www.youtube.com/embed/${TITLE_VIDEO}?autoplay=1&mute=1&loop=1&playlist=${TITLE_VIDEO}&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" title="Title video" tabindex="-1"></iframe><div class="shade"></div></div>
     <button id="snd" class="sndbtn">🔇 Sound</button>
-    <h1 class="st">Pokémon <span>War</span></h1><h2>Choose a route</h2><div class="picks">${ROUTES.map(card).join('')}</div>
-    <p class="note">Each route recruits only its own region's Pokémon. Progress saves in this browser.</p>`);
+    <h1 class="st">Pokémon <span>War</span></h1><h2>Choose your army</h2><div class="picks">${ROUTES.map(card).join('')}</div>
+    <p class="note">Each army recruits only its own region's Pokémon. Progress saves in this browser.</p>`);
   const snd=document.getElementById('snd'); let on=false;
   snd.onclick=()=>{on=!on; const f=document.getElementById('ytbg'); try{f.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');}catch(e){} snd.textContent=on?'🔊 Sound':'🔇 Sound';};
   screen.querySelectorAll('[data-rt]').forEach(b=>b.onclick=()=>{route=ROUTES.find(r=>r.id===b.dataset.rt); if(SAVES[route.id]){save=SAVES[route.id];showChapters();} else showStarter();});
@@ -923,7 +923,7 @@ function showStarter(){
   document.getElementById('bk').onclick=showRoutes;
 }
 function topBar(){return `<div class="tb"><span style="color:${route.col};font-weight:700">${route.name}</span><span class="spacer"></span><span class="cur">₽${save.money}</span><span class="cur tok">${save.tokens} TM tokens</span></div>
-  <div class="tabs"><button data-go="ch">Chapters</button><button data-go="rec">Recruit</button><button data-go="tm">TM Shop</button><button data-go="team">Team (${Object.keys(save.roster).length})</button><button data-go="routes">Routes</button></div>`;}
+  <div class="tabs"><button data-go="ch">Chapters</button><button data-go="rec">Recruit</button><button data-go="tm">TM Shop</button><button data-go="team">Team (${Object.keys(save.roster).length})</button><button data-go="routes">Armies</button></div>`;}
 function bindTabs(){screen.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>({ch:showChapters,rec:()=>showRecruit(),tm:()=>showShop(),team:showTeam,routes:showRoutes})[b.dataset.go]());}
 function showChapters(){
   const R2=REGIONS[route.foe];
@@ -938,7 +938,7 @@ function showChapters(){
     <details class="tester"><summary>Tester tools</summary><div class="row" style="flex-wrap:wrap">
       <button data-t="money">+₽2000</button><button data-t="tok">+10 TM tokens</button><button data-t="lv">Team +3 levels</button>
       <button data-t="unlock">Unlock all chapters</button><button data-t="all">Add every ${REGIONS[route.you].region} Pokémon</button><button data-t="shiny">Add every shiny</button></div></details>
-    <div class="row" style="max-width:260px"><button id="wipe">Reset this route's save</button></div>`);
+    <div class="row" style="max-width:260px"><button id="wipe">Reset this army's save</button></div>`);
   bindTabs();
   screen.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t, P=REGIONS[route.you].pool, all=[...P.rare,...P.uncommon,...P.common];
     if(t==='money') save.money+=2000; if(t==='tok') save.tokens+=10;
