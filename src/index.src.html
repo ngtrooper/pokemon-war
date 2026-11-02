@@ -632,6 +632,8 @@ const BOSS_MOVES={alakazam:['psychic','confusion','swift'],kingdra:['surf','drag
   houndoom:['flamethrower','crunch','bite'],ampharos:['thunderbolt','bodyslam','thundershock'],skarmory:['aerialace','ironhead','peck'],tyranitar:['rockslide','crunch','earthquake']};
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
 const BUILD='/*BUILD*/';
+// TEMP: every chapter playable for review. Set to false to restore clear-to-unlock.
+const UNLOCK_ALL=true;
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
 const REPLAY_PAY=.3;
@@ -1597,7 +1599,7 @@ function bindTabs(){screen.querySelectorAll('[data-go]').forEach(b=>b.onclick=()
 function showChapters(){
   if(!evoBusy) checkPendingEvos().then(any=>{ if(any) showChapters(); });
   const R2=REGIONS[route.foe];
-  const cards=CHAPTERS.map((C,i)=>{const locked=i>0&&!save.cleared[i-1], boss=SPECIES[R2.bosses[i]];
+  const cards=CHAPTERS.map((C,i)=>{const locked=!UNLOCK_ALL&&i>0&&!save.cleared[i-1], boss=SPECIES[R2.bosses[i]];
     return `<div class="chap ${locked?'locked':''}"><div class="cn">Chapter ${i+1}${save.cleared[i]?' <span class="eff2">✓ cleared</span>':''}</div><div class="ct">${C.name}</div>
       <div class="ms">${goalShort(C)} · Deploy ${C.max} · ${C.army.length} enemies${(C.reinf||[]).length?` <span style="color:#ff8a8a">+ reinforcements</span>`:''}</div>
       <div class="lvr">Enemies Lv ${C.elv[0]}–${C.elv[1]} · Boss Lv ${C.blv}</div>
