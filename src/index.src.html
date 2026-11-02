@@ -405,7 +405,7 @@ const AUTO_SPECIES = {
 };
 const AUTO_POOLS = {"kanto":{"rare":["bulbasaur","charmander","squirtle","pikachu","hitmonlee","hitmonchan","chansey","kangaskhan","mrmime","scyther","jynx","electabuzz","magmar","pinsir","tauros","lapras","eevee","aerodactyl","dratini"],"uncommon":["sandshrew","clefairy","oddish","venonat","psyduck","mankey","growlithe","poliwag","abra","machop","bellsprout","tentacool","geodude","ponyta","slowpoke","magnemite","farfetchd","doduo","seel","grimer","shellder","gastly","drowzee","krabby","voltorb","exeggcute","cubone","lickitung","koffing","rhyhorn","tangela","goldeen","staryu","porygon","omanyte","kabuto"],"common":["caterpie","weedle","pidgey","rattata","spearow","ekans","nidoranf","nidoranm","vulpix","jigglypuff","zubat","paras","diglett","meowth","horsea","magikarp"]},"johto":{"rare":["chikorita","cyndaquil","totodile","togepi","mareep","girafarig","shuckle","mantine","skarmory","stantler","miltank","larvitar"],"uncommon":["chinchou","natu","sudowoodo","aipom","yanma","murkrow","misdreavus","dunsparce","gligar","snubbull","qwilfish","sneasel","teddiursa","corsola","remoraid","delibird","houndour","phanpy","smoochum","elekid","magby"],"common":["sentret","hoothoot","ledyba","spinarak","pichu","cleffa","igglybuff","marill","hoppip","sunkern","wooper","pineco","slugma","swinub","tyrogue"]}};
 for(const k in AUTO_SPECIES) if(!SPECIES[k]) SPECIES[k]=AUTO_SPECIES[k];
-// 1% legendary tier: the pseudo-legendaries. Weak at first, so they grow ~30% faster (late bloomers).
+// 1% pseudo-legendary tier (key 'legendary' kept for saves). Weak at first, so they grow ~30% faster (late bloomers).
 const LEGENDARY={kanto:['dratini'],johto:['larvitar']};
 for(const r in LEGENDARY){ const P=AUTO_POOLS[r]; P.rare=P.rare.filter(k=>!LEGENDARY[r].includes(k)); P.legendary=LEGENDARY[r];
   for(const k of LEGENDARY[r]){ const g=SPECIES[k].gr; for(const x in g) g[x]=Math.min(95,Math.round(g[x]*1.3)); } }
@@ -1032,6 +1032,7 @@ function endChapter(win){
 const screen=document.getElementById('screen');
 function showScreen(html){screen.innerHTML=`<div class="scr">${html}</div>`;screen.style.display='block';screen.scrollTop=0;over=true;}
 function hideScreen(){screen.style.display='none';}
+const TIER_NAME={legendary:'Pseudo-legendary',rare:'Rare',uncommon:'Uncommon',common:'Common'};
 const TIER_COL={legendary:'#ff7ad9',rare:'#ffd84a',uncommon:'#6fb6ff',common:'#b9bfd6'};
 function monCard(r,key,opts={}){
   const sp=SPECIES[r.sk];
@@ -1158,13 +1159,13 @@ function showRecruit(results){
   const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<button class="pool ${n||s?'':'dim'}" data-mon="${sk}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></button>`;};
   const res=(results||[]).map((r,i)=>{const sp=SPECIES[r.sk];
     const t={new:'<b class="eff2">NEW!</b>',shiny:'<b class="shiny">✦ SHINY!</b>','meter-shiny':'<b class="shiny">✦ Meter full: SHINY!</b>',meter:`Shiny meter ${r.meter}/${SHINY_METER} · +1 TM token`,tokens:`Already complete · +${r.tok} TM tokens`}[r.kind];
-    return `<div class="res ${r.shiny?'sh':''} ${r.tier==='legendary'?'leg':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
+    return `<div class="res ${r.shiny?'sh':''} ${r.tier==='legendary'?'leg':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${TIER_NAME[r.tier]}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
   showScreen(`${topBar()}<h2>Recruit</h2>
     <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
       <span class="ms">Recruits join at Lv ${recruitLevel()} · Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
     ${res?`<div class="results">${res}</div>`:''}
     <p class="note">Tap any Pokémon to see its card.</p>
-    ${['legendary','rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${t} ${Math.round(TIER_RATES[t]*100)}%</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
+    ${['legendary','rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${TIER_NAME[t]} ${Math.round(TIER_RATES[t]*100)}%</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
   bindTabs();
   const go=n=>{const out=[];for(let i=0;i<n&&save.money>=PULL_COST;i++){save.money-=PULL_COST;out.push(pull());}persist();showRecruit(out);};
   document.getElementById('p1').onclick=()=>go(1); document.getElementById('p5').onclick=()=>go(5);
@@ -1184,7 +1185,7 @@ function showMonCard(sk,shiny){
   const status=own?`<span class="eff2">In your team · Lv ${r.lv}</span>`:`Joins at <b>Lv ${r.lv}</b> (next chapter's enemy level)`;
   const modal=document.createElement('div'); modal.className='modal';
   modal.innerHTML=`<div class="mcard" style="border-color:${TIER_COL[tier]||'#556'}">
-    <div class="mtop">${portrait(sk,shiny,'Normal','p80')}<div style="text-align:left"><div class="ms">#${String(+sp.id).padStart(3,'0')} · <span style="color:${TIER_COL[tier]};text-transform:uppercase">${tier||'boss'}</span></div>
+    <div class="mtop">${portrait(sk,shiny,'Normal','p80')}<div style="text-align:left"><div class="ms">#${String(+sp.id).padStart(3,'0')} · <span style="color:${TIER_COL[tier]};text-transform:uppercase">${TIER_NAME[tier]||'boss'}</span></div>
       <div class="mn" style="font-size:24px">${sp.n}${shiny?' <span class="shiny">✦ Shiny</span>':''}</div><div class="types">${typeTags(sp.ty)}</div>
       <div class="ms" style="margin-top:4px">${status}</div>
       <div class="ms">Owned: ${hasN?'● normal':'—'} ${hasS?'<span class="shiny">✦ shiny</span>':''}${!hasS&&(save.meters[sk]||0)?` · shiny meter ${save.meters[sk]}/${SHINY_METER}`:''}</div></div></div>
