@@ -116,7 +116,7 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .res.sh{box-shadow:0 0 18px #ffd84a88;background:linear-gradient(160deg,#3a3418,var(--panel))}
 @keyframes flip{from{opacity:0;transform:rotateY(90deg) scale(.8)}to{opacity:1;transform:none}}
 .pools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.pool{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid #33406e;border-radius:8px;padding:4px 8px;font-size:14px}.pool img{width:32px;height:32px;image-rendering:pixelated}.pool.dim{opacity:.45}.pm{color:var(--edge)}
+.pool{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid #33406e;border-radius:8px;padding:4px 8px;font-size:14px}.pool img{width:32px;height:32px;image-rendering:pixelated}.pool.dim{opacity:.45}.pool.done{opacity:.55;border-style:dashed}.pm{color:var(--edge)}
 .tms{display:flex;flex-direction:column;gap:6px;max-width:760px;margin:0 auto}
 .tm{display:flex;align-items:center;gap:8px;text-align:left;flex-wrap:wrap}.tm .cost{margin-left:auto;color:#9fd0ff;font-weight:600}.tm.sel{border-color:var(--edge)}
 /* portraits come from one shared sheet; zoom scales the 40px tiles */
@@ -130,6 +130,24 @@ button.pool{color:var(--ink);cursor:pointer}button.pool:hover{border-color:var(-
 .sbars{display:flex;flex-direction:column;gap:4px}.sb{display:grid;grid-template-columns:36px 28px 1fr 38px;gap:8px;align-items:center;font-size:14px}
 .sb span{color:var(--mute)}.sb i{display:block;height:8px;background:#0b1020;border-radius:4px;overflow:hidden}.sb u{display:block;height:100%;background:linear-gradient(90deg,#4aa3ff,#7dff9e)}
 .sb em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}.tml{display:flex;flex-wrap:wrap;gap:4px}
+/* FE-style battle forecast window on the map */
+#fcpop{position:absolute;display:none;z-index:6;line-height:normal;width:270px;background:linear-gradient(180deg,#1d2a5c,#141c3d);border:2px solid var(--edge);border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px #0009}
+#fcpop .vs{display:grid;grid-template-columns:1fr 54px 1fr;align-items:center;text-align:center;gap:2px 4px;font-size:16px}
+#fcpop .vs .nm{font-weight:700;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#fcpop .vs .lb{color:var(--mute);font-size:12px;background:#0d1430;border-radius:4px;padding:1px 0}
+#fcpop .vs .big{font-size:20px;font-weight:700}
+#fcpop .mvs{display:flex;align-items:center;gap:6px;margin:6px 0;background:#0d1430;border-radius:6px;padding:4px}
+#fcpop .mvs button{padding:2px 9px;font-size:16px}
+#fcpop .mvs .mn{flex:1;text-align:center;font-size:14px}
+#fcpop .ctr{font-size:12px;color:var(--mute);text-align:center;margin-top:3px}
+#fcpop .row{margin-top:6px}
+#fcpop .keys{font-size:11px;color:var(--mute);text-align:center;margin-top:4px}
+#hint{position:absolute;left:8px;bottom:8px;z-index:4;line-height:normal;background:#0b1020cc;border:1px solid #33406e;border-radius:6px;padding:3px 9px;font-size:13px;color:#cfd6f5;pointer-events:none;max-width:70%}
+#hint:empty{display:none}
+#menu button.kf{border-color:var(--edge);background:#2d3a68}
+.prepu{display:flex;align-items:center;gap:6px;padding:4px 0;border-top:1px solid #2b3766;flex-wrap:wrap}
+.prepu .nm{font-weight:600;min-width:84px}.prepu.sel .nm{color:var(--edge)}
+.chipb{font-size:12px;padding:2px 6px;border-radius:5px}.chipb.eq{border-color:var(--edge);background:#3a3216;color:#ffe9a8;font-weight:600}
 footer{margin-top:10px;color:var(--mute);font-size:13px;line-height:1.5}
 footer b{color:var(--ink);font-weight:600}
 @media (max-width:860px){#main{flex-direction:column}aside{width:100%}}
@@ -152,6 +170,8 @@ footer b{color:var(--ink);font-weight:600}
     <div id="stage">
       <canvas id="cv" width="768" height="528"></canvas>
       <div id="menu"></div>
+      <div id="fcpop"></div>
+      <div id="hint"></div>
       <div id="banner"></div>
       <div id="popup"></div>
     </div>
@@ -163,7 +183,7 @@ footer b{color:var(--ink);font-weight:600}
   </div>
   <footer>
     <b>How to play:</b> click your Pokémon → click a blue tile to move (click its own tile to stay) → Attack or Wait.
-    Moves work like weapons: each has power, accuracy, crit, range and PP (uses). Pick the move on the forecast before you confirm, or open Items after moving to equip a move and see expected damage against everything in range.
+    Moves work like weapons: each has power, accuracy, crit, range and PP (uses). Click an enemy while moving to walk next to it and open the forecast; switch moves with ◀ ▶ and targets with ▲ ▼. Keyboard: arrows move the cursor, Enter/Z selects, Esc/X goes back.
     Damage comes from the physical/special split (Atk vs Def, SpA vs SpD). Type matchups work like FE's weapon triangle: super-effective +20 Hit and +10% damage (×4: +40 Hit, +25%), resisted −20 Hit and −10% (×¼: −40, −25%), immune can't hit. Same-type moves get +15 Hit. Hit % shown is the true chance (FE-style two-roll average, so 80+ almost always lands). A Pokémon counters with its equipped move (the last one it used, marked E) when it can reach. Units 5+ Spe faster strike twice. Click an enemy to see its range. Esc / right-click cancels.
     <br>Fainted Pokémon leave the battle but come back next chapter. Oran Trees heal 20% at the start of your phase. Water-types swim, Grass-types move freely through forest, Rock/Ground climb mountains, Flying-types ignore all terrain and can stop over water.
     <br>Sprites &amp; portraits: Pokémon Mystery Dungeon (Spike Chunsoft), via the PMDCollab SpriteCollab project. Pokémon © Nintendo / Game Freak / The Pokémon Company. Non-commercial fan prototype.
@@ -215,8 +235,8 @@ const MOVES = {
   scratch:     {n:'Scratch',      t:'Normal',  c:'P',pow:6,acc:95, crit:5, rng:[1,1],pp:35},
   pound:       {n:'Pound',        t:'Normal',  c:'P',pow:6,acc:95, crit:0, rng:[1,1],pp:35},
   quickattack: {n:'Quick Attack', t:'Normal',  c:'P',pow:5,acc:100,crit:5, rng:[1,1],pp:30,fx:'quick',d:'Light: +4 Spe for doubling'},
-  vinewhip:    {n:'Vine Whip',    t:'Grass',   c:'P',pow:7,acc:95, crit:0, rng:[1,2],pp:25},
-  absorb:      {n:'Absorb',       t:'Grass',   c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:25,fx:'drain',d:'Heals half the damage dealt'},
+  vinewhip:    {n:'Vine Whip',    t:'Grass',   c:'P',pow:7,acc:95, crit:0, rng:[1,1],pp:25},
+  absorb:      {n:'Absorb',       t:'Grass',   c:'S',pow:6,acc:100,crit:0, rng:[1,1],pp:25,fx:'drain',d:'Heals half the damage dealt'},
   ember:       {n:'Ember',        t:'Fire',    c:'S',pow:7,acc:90, crit:0, rng:[1,2],pp:25},
   metalclaw:   {n:'Metal Claw',   t:'Steel',   c:'P',pow:7,acc:90, crit:10,rng:[1,1],pp:20},
   watergun:    {n:'Water Gun',    t:'Water',   c:'S',pow:7,acc:90, crit:0, rng:[1,2],pp:25},
@@ -224,7 +244,7 @@ const MOVES = {
   thundershock:{n:'Thunder Shock',t:'Electric',c:'S',pow:7,acc:90, crit:0, rng:[1,2],pp:25},
   irontail:    {n:'Iron Tail',    t:'Steel',   c:'P',pow:10,acc:70,crit:0, rng:[1,1],pp:10,fx:'heavy',d:'Heavy: −3 Spe for doubling'},
   rockthrow:   {n:'Rock Throw',   t:'Rock',    c:'P',pow:8,acc:85, crit:0, rng:[1,2],pp:15},
-  bubble:      {n:'Bubble',       t:'Water',   c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:30},
+  bubble:      {n:'Bubble',       t:'Water',   c:'S',pow:6,acc:100,crit:0, rng:[1,1],pp:30},
   gust:        {n:'Gust',         t:'Flying',  c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:35},
   karatechop:  {n:'Karate Chop',  t:'Fighting',c:'P',pow:8,acc:95, crit:15,rng:[1,1],pp:25},
   lowkick:     {n:'Low Kick',     t:'Fighting',c:'P',pow:7,acc:100,crit:0, rng:[1,1],pp:20},
@@ -233,19 +253,19 @@ const MOVES = {
   flamewheel:  {n:'Flame Wheel',  t:'Fire',    c:'P',pow:8,acc:95, crit:0, rng:[1,1],pp:25},
   takedown:    {n:'Take Down',    t:'Normal',  c:'P',pow:10,acc:85,crit:0, rng:[1,1],pp:20,fx:'heavy',d:'Heavy: −3 Spe for doubling'},
   peck:        {n:'Peck',         t:'Flying',  c:'P',pow:6,acc:100,crit:0, rng:[1,1],pp:35},
-  confusion:   {n:'Confusion',    t:'Psychic', c:'S',pow:7,acc:90, crit:0, rng:[1,2],pp:25},
-  mudslap:     {n:'Mud-Slap',     t:'Ground',  c:'S',pow:5,acc:100,crit:0, rng:[1,2],pp:20},
-  poisonsting: {n:'Poison Sting', t:'Poison',  c:'P',pow:5,acc:100,crit:0, rng:[1,2],pp:35},
+  confusion:   {n:'Confusion',    t:'Psychic', c:'S',pow:7,acc:90, crit:0, rng:[1,1],pp:25},
+  mudslap:     {n:'Mud-Slap',     t:'Ground',  c:'S',pow:5,acc:100,crit:0, rng:[1,1],pp:20},
+  poisonsting: {n:'Poison Sting', t:'Poison',  c:'P',pow:5,acc:100,crit:0, rng:[1,1],pp:35},
   bugbite:     {n:'Bug Bite',     t:'Bug',     c:'P',pow:7,acc:100,crit:0, rng:[1,1],pp:20},
   swift:       {n:'Swift',        t:'Normal',  c:'S',pow:6,acc:120,crit:0, rng:[1,2],pp:20,d:'Rarely misses'},
-  acid:        {n:'Acid',         t:'Poison',  c:'S',pow:7,acc:100,crit:0, rng:[1,2],pp:30},
-  fairywind:   {n:'Fairy Wind',   t:'Fairy',   c:'S',pow:7,acc:100,crit:0, rng:[1,2],pp:30},
+  acid:        {n:'Acid',         t:'Poison',  c:'S',pow:7,acc:100,crit:0, rng:[1,1],pp:30},
+  fairywind:   {n:'Fairy Wind',   t:'Fairy',   c:'S',pow:7,acc:100,crit:0, rng:[1,1],pp:30},
   playrough:   {n:'Play Rough',   t:'Fairy',   c:'P',pow:9,acc:90, crit:0, rng:[1,1],pp:15},
   // stronger moves: TMs and bosses
   thunderbolt: {n:'Thunderbolt',  t:'Electric',c:'S',pow:10,acc:95,crit:0, rng:[1,2],pp:15},
   flamethrower:{n:'Flamethrower', t:'Fire',    c:'S',pow:10,acc:95,crit:0, rng:[1,2],pp:15},
   surf:        {n:'Surf',         t:'Water',   c:'S',pow:10,acc:95,crit:0, rng:[1,2],pp:15},
-  gigadrain:   {n:'Giga Drain',   t:'Grass',   c:'S',pow:8,acc:100,crit:0, rng:[1,2],pp:15,fx:'drain',d:'Heals half the damage dealt'},
+  gigadrain:   {n:'Giga Drain',   t:'Grass',   c:'S',pow:8,acc:100,crit:0, rng:[1,1],pp:15,fx:'drain',d:'Heals half the damage dealt'},
   rockslide:   {n:'Rock Slide',   t:'Rock',    c:'P',pow:10,acc:85,crit:5, rng:[1,2],pp:10},
   dig:         {n:'Dig',          t:'Ground',  c:'P',pow:10,acc:95,crit:0, rng:[1,1],pp:15},
   brickbreak:  {n:'Brick Break',  t:'Fighting',c:'P',pow:9,acc:100,crit:0, rng:[1,1],pp:15},
@@ -258,15 +278,16 @@ const MOVES = {
   dazzlinggleam:{n:'Dazzling Gleam',t:'Fairy', c:'S',pow:9,acc:100,crit:0, rng:[1,2],pp:10},
   bodyslam:    {n:'Body Slam',    t:'Normal',  c:'P',pow:10,acc:95,crit:0, rng:[1,1],pp:15},
   lick:        {n:'Lick',         t:'Ghost',   c:'P',pow:6,acc:100,crit:0, rng:[1,1],pp:30},
-  powdersnow:  {n:'Powder Snow',  t:'Ice',     c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:25},
+  powdersnow:  {n:'Powder Snow',  t:'Ice',     c:'S',pow:6,acc:100,crit:0, rng:[1,1],pp:25},
   dragonrage:  {n:'Dragon Rage',  t:'Dragon',  c:'S',pow:7,acc:100,crit:0, rng:[1,2],pp:15},
   splash:      {n:'Splash',       t:'Normal',  c:'P',pow:0,acc:100,crit:0, rng:[1,1],pp:40,d:'…nothing happens'},
+  earthquake:  {n:'Earthquake',   t:'Ground',  c:'P',pow:14,acc:100,crit:0, rng:[1,1],pp:10,fx:'quake',d:'Hits every non-flying Pokémon around the user, allies too; damage is split between them; can’t be countered'},
   hydropump:   {n:'Hydro Pump',   t:'Water',   c:'S',pow:9,acc:75, crit:0, rng:[2,3],pp:5, d:'Long range (2–3), can’t hit adjacent'},
 };
 // Learnable TMs: a Pokémon can learn a TM if it shares the move's type, or if the TM is Normal-type.
 const TMS = [
   ['swift',2],['bodyslam',3],['thunderbolt',3],['flamethrower',3],['surf',3],['hydropump',3],['gigadrain',3],
-  ['rockslide',3],['dig',3],['brickbreak',3],['aerialace',2],['psychic',3],['sludgebomb',3],['xscissor',3],
+  ['rockslide',3],['dig',3],['earthquake',4],['brickbreak',3],['aerialace',2],['psychic',3],['sludgebomb',3],['xscissor',3],
   ['ironhead',3],['crunch',3],['dazzlinggleam',3],
 ];
 // st = stats at recruit level. gr = growth % per level.
@@ -303,7 +324,7 @@ const SPECIES = {
   snubbull:  {id:'0209',n:'Snubbull',  ty:['Fairy'],        mov:5,st:{hp:21,atk:9,def:5,spa:4,spd:5,spe:4}, gr:{hp:60,atk:60,def:40,spa:20,spd:35,spe:30},mv:['bite','playrough']},
   heracross: {id:'0214',n:'Heracross', ty:['Bug','Fighting'],mov:5,st:{hp:32,atk:13,def:9,spa:4,spd:9,spe:8},gr:G0,mv:['brickbreak','xscissor']},
   ursaring:  {id:'0217',n:'Ursaring',  ty:['Normal'],       mov:5,st:{hp:38,atk:14,def:8,spa:6,spd:7,spe:6}, gr:G0,mv:['bodyslam','crunch']},
-  steelix:   {id:'0208',n:'Steelix',   ty:['Steel','Ground'],mov:4,st:{hp:44,atk:13,def:15,spa:5,spd:6,spe:4},gr:G0,mv:['ironhead','dig']},
+  steelix:   {id:'0208',n:'Steelix',   ty:['Steel','Ground'],mov:4,st:{hp:44,atk:13,def:15,spa:5,spd:6,spe:4},gr:G0,mv:['ironhead','earthquake']},
 };
 // Auto-generated from Pokémon Showdown base stats (@pkmn/dex): stats = base/8 (HP 10 + base×0.22), growth from base.
 const AUTO_SPECIES = {
@@ -450,7 +471,7 @@ const CHAPTERS = [
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
 ];
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
-const BUILD='2026-11-02 00:03';
+const BUILD='2026-11-02 00:18';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
 const REPLAY_PAY=.3;
@@ -475,7 +496,7 @@ function portrait(sk,shiny,emo='Normal',cls='portrait'){
 
 // ---------- state ----------
 let units=[], turn=1, phase='p', state='select', sel=null, reach=null, origin=null, hover=null, target=null, fcMove=0;
-let itemSel=0, danger=false, inspect=null, busy=false, over=false, fx=[], shake=0, uid=0;
+let prepSel=null, itemSel=0, danger=false, inspect=null, busy=false, over=false, fx=[], shake=0, uid=0;
 const tile=(x,y)=> (x<0||y<0||x>=MW||y>=MH)? null : MAP[y][x];
 const key=(x,y)=>x+','+y;
 const dist=(a,b,c,d)=>Math.abs(a-c)+Math.abs(b-d);
@@ -526,6 +547,10 @@ function inRange(mv,d){const M=MOVES[mv.k];return d>=M.rng[0]&&d<=M.rng[1];}
 function maxRange(u){return Math.max(0,...usable(u).map(i=>MOVES[u.moves[i].k].rng[1]));}
 function targetsFrom(u,x,y){return units.filter(o=>o.alive&&o.team!==u.team&&usable(u).some(i=>inRange(u.moves[i],dist(x,y,o.x,o.y))));}
 
+// Earthquake: everyone within 1 tile (diagonals too) except fliers, both teams; damage split between them.
+function quakeTargets(a,x=a.x,y=a.y){return units.filter(o=>o.alive&&o!==a&&Math.max(Math.abs(o.x-x),Math.abs(o.y-y))<=1&&!isFly(o));}
+function quakeInfo(a,mi,x=a.x,y=a.y){const ts=quakeTargets(a,x,y), n=Math.max(1,ts.length);
+  return ts.map(t=>{const c=strikeCalc(a,t,mi,x,y,t.x,t.y);return {t,dmg:Math.ceil(c.dmg/n),hit:c.hit,crit:c.crit,eff:c.eff};});}
 function strikeCalc(a,d,mi,ax,ay,dx,dy){
   const mv=a.moves[mi], M=MOVES[mv.k]; const e=eff(M.t,d.sp.ty);
   // Damage: physical/special split only. Type matchup only shifts Hit (like FE's weapon triangle).
@@ -541,8 +566,8 @@ function strikeCalc(a,d,mi,ax,ay,dx,dy){
 function bestCounter(d,a,dx,dy,ax,ay){
   const r=dist(dx,dy,ax,ay); let best=null;
   // FE rule: counter with the equipped (last used) move if it reaches; otherwise fall back to the best move that does.
-  const eq=d.moves[d.equip]; if(eq&&eq.pp>0&&inRange(eq,r)){const s=strikeCalc(d,a,d.equip,dx,dy,ax,ay); if(s.eff!==0) return {...s,v:s.dmg*s.hit,equipped:true};}
-  for(const i of usable(d)){ if(!inRange(d.moves[i],r)) continue; const s=strikeCalc(d,a,i,dx,dy,ax,ay); if(s.eff===0) continue; const v=s.dmg*s.hit; if(!best||v>best.v) best={...s,v}; }
+  const eq=d.moves[d.equip]; if(eq&&eq.pp>0&&inRange(eq,r)&&MOVES[eq.k].fx!=='quake'){const s=strikeCalc(d,a,d.equip,dx,dy,ax,ay); if(s.eff!==0) return {...s,v:s.dmg*s.hit,equipped:true};}
+  for(const i of usable(d)){ if(!inRange(d.moves[i],r)||MOVES[d.moves[i].k].fx==='quake') continue; const s=strikeCalc(d,a,i,dx,dy,ax,ay); if(s.eff===0) continue; const v=s.dmg*s.hit; if(!best||v>best.v) best={...s,v}; }
   return best;
 }
 function forecast(a,d,mi,ax=a.x,ay=a.y){
@@ -601,7 +626,18 @@ function frame(now){
   for(const u of units) u.anim.t+=dt;
   draw(); requestAnimationFrame(frame);
 }
+function hintText(){
+  if(over||!route) return '';
+  if(phase!=='p') return 'Enemy phase…';
+  return ({prep:'Preparations: click your Pokémon, then a blue tile or ally to swap places · click enemies to see their range',
+    select:'Click a Pokémon to move it · click an enemy to see its range',
+    move:'Click a blue tile to move · click an enemy to move next to it and attack · Esc to cancel',
+    action:'Choose an action',forecast:'◀ ▶ switch move · ▲ ▼ switch target · Attack to confirm',
+    items:'Pick a move to equip'})[state]||'';
+}
+let lastHint=null;
 function draw(){
+  const h=hintText(); if(h!==lastHint){ document.getElementById('hint').textContent=h; lastHint=h; }
   ctx.save();
   if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);shake*=.85;if(shake<.5)shake=0;}
   ctx.drawImage(mapLayer,0,0);
@@ -615,11 +651,18 @@ function draw(){
   if(state==='move'&&sel&&reach){ const z=zoneOf(sel,reach);
     ctx.fillStyle='rgba(60,130,255,.42)'; for(const k of z.move){const [x,y]=k.split(',').map(Number);ctx.fillRect(x*T+1,y*T+1,T-2,T-2);}
     ctx.fillStyle='rgba(255,60,60,.38)'; for(const k of z.atk){const [x,y]=k.split(',').map(Number);ctx.fillRect(x*T+1,y*T+1,T-2,T-2);}
-    if(hover&&reach.stops.has(key(hover.x,hover.y))){ const p=[[sel.x,sel.y],...pathTo(reach,sel,hover.x,hover.y)];
+    let pv=null; const hu=hover&&unitAt(hover.x,hover.y);
+    if(hu&&hu.team==='e'){ const st=bestStopFor(sel,hu); if(st){ pv=st; drawReticle(hu,'#ff6b6b'); } }
+    else if(hover&&reach.stops.has(key(hover.x,hover.y))) pv=hover;
+    if(pv){ const p=[[sel.x,sel.y],...pathTo(reach,sel,pv.x,pv.y)];
       ctx.strokeStyle='rgba(255,240,140,.9)'; ctx.lineWidth=6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath();
       p.forEach(([x,y],i)=>{const X=x*T+T/2,Y=y*T+T/2; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}); ctx.stroke(); }
   }
-  if(state==='target'||state==='forecast'){ ctx.fillStyle='rgba(255,60,60,.45)'; for(const o of targetsFrom(sel,sel.x,sel.y)) ctx.fillRect(o.x*T+1,o.y*T+1,T-2,T-2); }
+  if(state==='forecast'&&sel){ ctx.fillStyle='rgba(255,60,60,.35)'; for(const o of targetsFrom(sel,sel.x,sel.y)) ctx.fillRect(o.x*T+1,o.y*T+1,T-2,T-2); if(target) drawReticle(target,'#ffe066'); }
+  if(state==='prep'){ const C=CHAPTERS[chapter], pu=.35+.15*Math.sin(clock/300);
+    for(const [x,y] of C.deploy){ ctx.fillStyle=`rgba(80,150,255,${pu})`; ctx.fillRect(x*T+1,y*T+1,T-2,T-2); }
+    if(prepSel){ ctx.strokeStyle='#ffe066'; ctx.lineWidth=3; ctx.strokeRect(prepSel.x*T+2,prepSel.y*T+2,T-4,T-4); }
+    if(inspect&&inspect.alive){ const z=zoneOf(inspect); ctx.fillStyle='rgba(60,130,255,.3)'; for(const k of z.move){const [x,y]=k.split(',').map(Number);ctx.fillRect(x*T+1,y*T+1,T-2,T-2);} ctx.fillStyle='rgba(255,60,60,.3)'; for(const k of z.atk){const [x,y]=k.split(',').map(Number);ctx.fillRect(x*T+1,y*T+1,T-2,T-2);} } }
   // units
   const list=units.filter(u=>u.alive||u.alpha>0).sort((a,b)=>a.py-b.py);
   for(const u of list) drawUnit(u);
@@ -637,6 +680,8 @@ function draw(){
   fx=fx.filter(f=>f.t<f.dur);
   ctx.restore();
 }
+function drawReticle(u,col){ const X=u.x*T,Y=u.y*T,b=(Math.sin(clock/140)+1)*2; ctx.strokeStyle=col; ctx.lineWidth=3;
+  for(const [sx,sy] of [[0,0],[1,0],[0,1],[1,1]]){const cx=X+sx*T+(sx?-b:b),cy=Y+sy*T+(sy?-b:b),dx=sx?-1:1,dy=sy?-1:1;ctx.beginPath();ctx.moveTo(cx,cy+dy*14);ctx.lineTo(cx,cy);ctx.lineTo(cx+dx*14,cy);ctx.stroke();} }
 function drawUnit(u){
   const a=animInfo(u,u.anim.name), im=IMG[a.k]; const fi=frameAt(a,u.anim.t,u.anim.loop);
   const gx=u.px*T+T/2, gy=u.py*T+T*0.74;
@@ -661,7 +706,6 @@ function zoneOf(u,r){ r=r||reachable(u); const move=new Set(r.stops), atk=new Se
   const rmax=maxRange(u), rmin=Math.min(...usable(u).map(i=>MOVES[u.moves[i].k].rng[0]),1);
   for(const k of r.stops){const [x,y]=k.split(',').map(Number);
     for(let dy=-rmax;dy<=rmax;dy++)for(let dx=-rmax;dx<=rmax;dx++){const d=Math.abs(dx)+Math.abs(dy);if(d<rmin||d>rmax)continue;const nx=x+dx,ny=y+dy;if(tile(nx,ny)===null)continue;const kk=key(nx,ny);if(!move.has(kk))atk.add(kk);}}
-  if(u.boss){ move.clear(); move.add(key(u.x,u.y)); atk.clear(); for(let dy=-rmax;dy<=rmax;dy++)for(let dx=-rmax;dx<=rmax;dx++){const d=Math.abs(dx)+Math.abs(dy);if(d<1||d>rmax)continue;if(tile(u.x+dx,u.y+dy)!==null)atk.add(key(u.x+dx,u.y+dy));} }
   return {move,atk};
 }
 function dangerTiles(){const s=new Set();for(const e of units){if(!e.alive||e.team!=='e')continue;const z=zoneOf(e);for(const k of z.atk)s.add(k);for(const k of z.move)s.add(k);}return s;}
@@ -708,7 +752,25 @@ async function faint(u){
   setAnim(u,'Hurt',true); floatText(u.x,u.y,'Fainted','#ff9a9a',18,1200);
   for(let i=0;i<20;i++){u.alpha=1-i/20; await sleep(30);} u.alpha=0; u.alive=false;
 }
+async function quakeFight(a,mi){
+  busy=true; hideMenu(); const mv=a.moves[mi], M=MOVES[mv.k]; mv.pp--; a.equip=mi;
+  const hits=quakeInfo(a,mi); if(a.team==='e') a.aggro=true;
+  const an=animInfo(a,'Attack'); setAnim(a,'Attack',false); floatText(a.x,a.y,M.n,'#fff',15,1000);
+  await sleep(Math.min(500,animLen(an)*.5)); shake=18;
+  for(const h of hits){ fx.push({kind:'burst',x:h.t.x*T+T/2,y:h.t.y*T+T/2,col:TYPE_COL[M.t],t:0,dur:450});
+    if(h.t.team==='e') h.t.aggro=true;
+    if(Math.random()*100<h.hit){ const crit=Math.random()*100<h.crit, dmg=h.dmg*(crit?3:1); h.t.hp=Math.max(0,h.t.hp-dmg); h.t.flash=1; setAnim(h.t,'Hurt',true); h.dealt=dmg>0;
+      floatText(h.t.x,h.t.y,(crit?'CRIT! ':'')+dmg,crit?'#ffd84a':'#fff',crit?26:22); }
+    else floatText(h.t.x,h.t.y,'MISS','#9ab',20); }
+  await sleep(700); setAnim(a,'Idle',true);
+  for(const h of hits){ if(h.t.hp>0) setAnim(h.t,'Idle',true); else await faint(h.t); }
+  if(a.team==='p'&&a.alive){ let g=1; for(const h of hits){ if(h.t.team!=='e') continue; if(!h.t.alive) g=Math.max(g,clamp(30+6*(h.t.lv-a.lv)+(h.t.boss?40:0),10,100)); else if(h.dealt) g=Math.max(g,clamp(10+3*(h.t.lv-a.lv),3,40)); }
+    a.exp+=g; floatText(a.x,a.y-0.2,'+'+g+' EXP','#8cc4ff',14,1000); if(a.exp>=100){ a.exp-=100; await levelUp(a); } }
+  busy=false; renderInfo();
+}
 async function fight(a,d,mi){
+  if(MOVES[a.moves[mi].k].fx==='quake') return quakeFight(a,mi);
+  if(a.team==='e') a.aggro=true; if(d.team==='e') d.aggro=true;
   busy=true; hideMenu();
   const f=forecast(a,d,mi);
   const seq=['A']; if(f.D) seq.push('D'); if(f.Adbl) seq.push('A'); else if(f.Ddbl) seq.push('D');
@@ -748,11 +810,14 @@ function distField(u){
   return best;
 }
 function planAttack(e){
-  const r=e.boss?{stops:new Set([key(e.x,e.y)]),best:new Map([[key(e.x,e.y),0]]),prev:new Map()}:reachable(e);
+  const r=reachable(e);
   let best=null;
   for(const k of r.stops){ const [x,y]=k.split(',').map(Number);
     for(const p of units){ if(!p.alive||p.team===e.team) continue; const d=dist(x,y,p.x,p.y);
       for(const i of usable(e)){ if(!inRange(e.moves[i],d)) continue;
+        if(MOVES[e.moves[i].k].fx==='quake'){ const ox=e.x,oy=e.y; e.x=x; e.y=y; const hs=quakeInfo(e,i,x,y); e.x=ox; e.y=oy;
+          let v=0; for(const h of hs){ const ex=h.dmg*h.hit/100; v+=(h.t.team===e.team?-1.5:1)*ex+(h.t.team!==e.team&&h.dmg>=h.t.hp?40*h.hit/100:0); }
+          const sq=v+terrAvo(e,x,y)/25+Math.random()*0.3; if(!best||sq>best.s) best={s:sq,x,y,p,i,r}; continue; }
         const ox=e.x,oy=e.y; e.x=x; e.y=y; const f=forecast(e,p,i,x,y); e.x=ox; e.y=oy;
         const n=f.Adbl?2:1; const ex=f.A.dmg*f.A.hit/100*n; const kill=f.A.dmg*n>=p.hp?45*f.A.hit/100:0;
         const risk=f.D?f.D.dmg*f.D.hit/100*(f.Ddbl?2:1):0;
@@ -764,8 +829,8 @@ function planAttack(e){
 async function enemyAct(e){
   if(!e.alive) return;
   const plan=planAttack(e);
-  if(plan){ await walk(e,pathTo(plan.r,e,plan.x,plan.y)); await sleep(150); await fight(e,plan.p,plan.i); }
-  else if(!e.guard&&!e.boss){ const r=reachable(e), df=distField(e); let best=null;
+  if(plan){ e.aggro=true; await walk(e,pathTo(plan.r,e,plan.x,plan.y)); await sleep(150); await fight(e,plan.p,plan.i); }
+  else if(!(e.guard||e.boss)||e.aggro){ const r=reachable(e), df=distField(e); let best=null;
     for(const k of r.stops){const v=(df.get(k)??999)+r.best.get(k)*0.01; if(!best||v<best.v)best={v,k};}
     if(best&&best.k!==key(e.x,e.y)){const [x,y]=best.k.split(',').map(Number); await walk(e,pathTo(r,e,x,y));}
   }
@@ -789,7 +854,7 @@ function afterAction(u){ u.done=true; setAnim(u,'Idle',true); sel=null; reach=nu
   if(checkEnd()) return; if(!units.some(x=>x.alive&&x.team==='p'&&!x.done)) endPlayerPhase(); }
 
 // ---------- UI ----------
-function updateHUD(){ document.getElementById('turn').textContent=turn; const ph=document.getElementById('phase'); const sd=route?sideInfo(phase):null; ph.textContent=sd?`${sd.name} (${sd.region}) · ${phase==='p'?'You':'Enemy'}`:''; ph.style.color=sd?sd.col:''; document.getElementById('goal').textContent=route?goalText():''; document.getElementById('chap').textContent=route?`Ch ${chapter+1}: ${CHAPTERS[chapter].name}`:''; document.getElementById('endBtn').disabled=phase!=='p'; }
+function updateHUD(){ document.getElementById('turn').textContent=turn; const ph=document.getElementById('phase'); const sd=route?sideInfo(phase):null; ph.textContent=sd?`${sd.name} (${sd.region}) · ${phase==='p'?'You':'Enemy'}`:''; ph.style.color=sd?sd.col:''; document.getElementById('goal').textContent=route?goalText():''; document.getElementById('chap').textContent=route?`Ch ${chapter+1}: ${CHAPTERS[chapter].name}`:''; document.getElementById('endBtn').disabled=phase!=='p'||state==='prep'; if(state==='prep') ph.textContent='Preparations'; }
 function typeTags(ty){return ty.map(t=>`<span class="type" style="background:${TYPE_COL[t]}">${t}</span>`).join('');}
 function effTag(e){const h=typeHit(e),m=Math.round((typeDmg(e)-1)*100);return e===0?`<span class="eff0">immune</span>`:h>0?`<span class="eff2">▲${h>20?'▲':''} +${h} hit +${m}% dmg</span>`:h<0?`<span class="eff05">▼${h<-20?'▼':''} ${h} hit ${m}% dmg</span>`:'';}
 function moveRow(u,i,opts={}){
@@ -815,30 +880,10 @@ function renderInfo(){
 }
 function renderForecast(){
   const el=document.getElementById('fcPanel');
-  if(state==='items'&&sel){ renderItems(); return; }
-  if(!(state==='forecast'||state==='target')||!sel){ el.style.display='none'; return; }
-  const d=state==='forecast'?target:(hover&&unitAt(hover.x,hover.y));
-  if(!d||d.team===sel.team||!targetsFrom(sel,sel.x,sel.y).includes(d)){ el.style.display='block'; el.innerHTML='<h3>Attack</h3><div style="color:var(--mute);font-size:14px">Pick a target in red.</div><div class="row"><button id="fcBack">Back</button></div>'; bindFc(); return; }
-  const r=dist(sel.x,sel.y,d.x,d.y);
-  const ok=usable(sel).filter(i=>inRange(sel.moves[i],r));
-  if(!ok.includes(fcMove)) fcMove=ok.includes(sel.equip)?sel.equip:bestMoveVs(sel,d);
-  const f=forecast(sel,d,fcMove); const A=f.A, D=f.D;
-  const cell=(s,dbl)=>s?`${s.dmg}${dbl&&s.dmg>0?' <span style="color:#ffd84a">×2</span>':''}`:'—';
-  el.style.display='block';
-  el.innerHTML=`<h3>Battle forecast</h3>
-  <div class="fc">
-    <div class="big team-p">${sel.sp.n}</div><div></div><div class="big ${d.team==='e'?'team-e':'team-p'}">${d.sp.n}</div>
-    <div>${sel.hp}</div><div class="lab">HP</div><div>${d.hp}</div>
-    <div>${cell(A,f.Adbl)} ${effTag(A.eff)}</div><div class="lab">Dmg</div><div>${cell(D,f.Ddbl)} ${D?effTag(D.eff):''}</div>
-    <div>${A.hit}</div><div class="lab">Hit</div><div>${D?D.hit:'—'}</div>
-    <div>${A.crit}</div><div class="lab">Crit</div><div>${D?D.crit:'—'}</div>
-    <div><b>${expDmg(A,f.Adbl).toFixed(1)}</b></div><div class="lab">Exp. dmg</div><div><b>${D?expDmg(D,f.Ddbl).toFixed(1):'—'}</b></div>
-  </div>
-  <div style="font-size:12px;color:var(--mute);margin-top:4px;text-align:center">${D?`Counter: ${MOVES[d.moves[D.mi].k].n}${D.equipped?' (equipped)':''}`:'No counterattack at this range'}</div>
-  <h3 style="margin-top:8px">Choose move</h3>
-  <div class="mvlist">${sel.moves.map((m,i)=>moveRow(sel,i,{btn:state==='forecast',vs:d,sel:i===fcMove,disabled:!ok.includes(i),note:m.pp<=0?'no PP':!inRange(m,r)?'out of range':''})).join('')}</div>
-  ${state==='forecast'?'<div class="row"><button id="fcBack">Back</button><button id="fcGo" class="primary">Attack!</button></div>':'<div style="font-size:13px;color:var(--mute);margin-top:6px">Click the target to choose a move.</div>'}`;
-  bindFc();
+  if(state==='items'&&sel){ hideFcPop(); renderItems(); return; }
+  if(state==='prep'){ hideFcPop(); renderPrep(); return; }
+  el.style.display='none';
+  if(state==='forecast'&&sel&&target) renderFcPop(); else hideFcPop();
 }
 function expDmg(info,dbl){return info?info.dmg*(dbl?2:1)*info.hit/100*(1+2*info.crit/100):0;}
 function renderItems(){
@@ -863,6 +908,49 @@ function renderItems(){
   document.getElementById('itBack').onclick=cancel;
   document.getElementById('itEquip').onclick=()=>{u.equip=itemSel;renderItems();renderInfo();};
 }
+function fcMoves(u,d){const r=dist(u.x,u.y,d.x,d.y);return usable(u).filter(i=>inRange(u.moves[i],r));}
+function hideFcPop(){document.getElementById('fcpop').style.display='none';}
+function renderFcPop(){
+  const pop=document.getElementById('fcpop'), u=sel, d=target;
+  const ok=fcMoves(u,d); if(!ok.includes(fcMove)) fcMove=ok[0];
+  const f=forecast(u,d,fcMove), A=f.A, D=f.D, M=MOVES[u.moves[fcMove].k];
+  const ko=A.dmg*(f.Adbl?2:1)>=d.hp;
+  const cell=(x,dbl)=>x?`${x.dmg}${dbl&&x.dmg>0?'<span style="color:#ffd84a;font-size:14px"> ×2</span>':''}`:'–';
+  if(M.fx==='quake'){ const hs=quakeInfo(u,fcMove);
+    pop.innerHTML=`<div style="font-weight:700;text-align:center">${u.sp.n} · Earthquake</div>
+      <div class="mvs"><button id="fpL" ${ok.length<2?'disabled':''}>◀</button><div class="mn"><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${u.moves[fcMove].pp}/${M.pp}</span><br><span class="ms">Damage split ${hs.length} ways · no counter</span></div><button id="fpR" ${ok.length<2?'disabled':''}>▶</button></div>
+      <table class="itab">${hs.map(h=>`<tr><td class="${h.t.team==='p'?'team-p':'team-e'}">${h.t.sp.n}${h.t.team===u.team?' (ally!)':''}</td><td>${h.dmg} dmg</td><td>${h.hit}%</td><td>HP ${h.t.hp}${h.dmg>=h.t.hp?' <span class="eff2">KO</span>':''}</td></tr>`).join('')}</table>
+      <div class="row"><button id="fpBack">Back</button><button id="fpGo" class="primary">⚔ Attack</button></div><div class="keys">◀ ▶ move · Enter attack · Esc back</div>`;
+  } else
+  pop.innerHTML=`<div class="vs">
+      <div class="nm team-p">${u.sp.n}</div><div></div><div class="nm team-e">${d.sp.n}</div>
+      <div class="big">${u.hp}</div><div class="lb">HP</div><div class="big">${d.hp}${ko?' <span class="eff2" style="font-size:12px">KO</span>':''}</div>
+      <div class="big">${cell(A,f.Adbl)}</div><div class="lb">Dmg</div><div class="big">${cell(D,f.Ddbl)}</div>
+      <div class="big">${A.hit}</div><div class="lb">Hit</div><div class="big">${D?D.hit:'–'}</div>
+      <div class="big">${A.crit}</div><div class="lb">Crit</div><div class="big">${D?D.crit:'–'}</div></div>
+    <div class="mvs"><button id="fpL" ${ok.length<2?'disabled':''}>◀</button><div class="mn"><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${u.moves[fcMove].pp}/${M.pp}</span><br>${effTag(A.eff)} ${u.sp.ty.includes(M.t)?'<span class="stab">+15 same type</span>':''}</div><button id="fpR" ${ok.length<2?'disabled':''}>▶</button></div>
+    <div class="ctr">${D?`Counter: ${MOVES[d.moves[D.mi].k].n}`:'Can’t counter at this range'} · Exp. dmg ${expDmg(A,f.Adbl).toFixed(1)}</div>
+    <div class="row"><button id="fpBack">Back</button><button id="fpGo" class="primary">⚔ Attack</button></div>
+    <div class="keys">◀ ▶ move · ▲ ▼ target · Enter attack · Esc back</div>`;
+  const sx=(d.x+1.15)/MW*100, left=d.x>=MW/2?((d.x-0.15)/MW*100):sx;
+  pop.style.left=left+'%'; pop.style.transform=d.x>=MW/2?'translateX(-100%)':'none';
+  pop.style.top=Math.max(1,Math.min(42,(d.y-1.5)/MH*100))+'%'; pop.style.display='block';
+  document.getElementById('fpL').onclick=()=>cycleMove(-1); document.getElementById('fpR').onclick=()=>cycleMove(1);
+  document.getElementById('fpBack').onclick=cancel; document.getElementById('fpGo').onclick=confirmAttack;
+}
+function cycleMove(dir){ if(state!=='forecast') return; const ok=fcMoves(sel,target); const i=ok.indexOf(fcMove); fcMove=ok[(i+dir+ok.length)%ok.length]; renderFcPop(); }
+function sortedTargets(u){ return targetsFrom(u,u.x,u.y).sort((a,b)=>{const ea=expDmg(strikeCalc(u,a,bestMoveVs(u,a),u.x,u.y,a.x,a.y)), eb=expDmg(strikeCalc(u,b,bestMoveVs(u,b),u.x,u.y,b.x,b.y)); return eb-ea||a.uid-b.uid;}); }
+function cycleTarget(dir){ if(state!=='forecast') return; const ts=sortedTargets(sel); if(ts.length<2) return; const i=ts.indexOf(target); openForecast(ts[(i+dir+ts.length)%ts.length]); }
+function openForecast(t){ target=t; const ok=fcMoves(sel,t).filter(i=>eff(MOVES[sel.moves[i].k].t,t.sp.ty)!==0);
+  fcMove=ok.includes(sel.equip)?sel.equip:(ok.length?bestMoveVs(sel,t):fcMoves(sel,t)[0]); state='forecast'; faceTo(sel,t.x,t.y); hideMenu(); renderForecast(); }
+function startTargeting(){ const ts=sortedTargets(sel); if(ts.length) openForecast(ts[0]); }
+// FE-style: clicking an enemy while choosing where to move walks to the best tile in range and opens the forecast.
+function bestStopFor(u,e){ let best=null;
+  for(const k of reach.stops){ const [x,y]=k.split(',').map(Number), d=dist(x,y,e.x,e.y);
+    if(!usable(u).some(i=>inRange(u.moves[i],d)&&eff(MOVES[u.moves[i].k].t,e.sp.ty)!==0)) continue;
+    const sc=reach.best.get(k)*10-(x===u.x&&y===u.y?15:0)-terrAvo(u,x,y)/5-terrDef(u,x,y)*2;
+    if(!best||sc<best.sc) best={x,y,sc}; }
+  return best; }
 function bindFc(){
   const el=document.getElementById('fcPanel');
   el.querySelectorAll('button.mv').forEach(b=>b.onclick=()=>{fcMove=+b.dataset.mi;renderForecast();});
@@ -870,7 +958,7 @@ function bindFc(){
   const go=document.getElementById('fcGo'); if(go) go.onclick=confirmAttack;
 }
 function bestMoveVs(u,d){const r=dist(u.x,u.y,d.x,d.y);let b=null;for(const i of usable(u)){if(!inRange(u.moves[i],r))continue;const s=strikeCalc(u,d,i,u.x,u.y,d.x,d.y);const v=s.dmg*s.hit;if(!b||v>b.v)b={v,i};}return b?b.i:0;}
-async function confirmAttack(){ if(busy||!sel||!target) return; const u=sel,d=target,mi=fcMove; state='busy'; renderForecast(); await fight(u,d,mi); afterAction(u); }
+async function confirmAttack(){ if(busy||!sel||!target||state!=='forecast') return; const u=sel,d=target,mi=fcMove; state='busy'; renderForecast(); await fight(u,d,mi); afterAction(u); }
 
 const menu=document.getElementById('menu');
 function showMenu(u){
@@ -878,8 +966,9 @@ function showMenu(u){
   menu.innerHTML=`${can?'<button data-a="attack">⚔ Attack</button>':''}<button data-a="items">Items</button><button data-a="wait">Wait</button><button data-a="cancel">Cancel</button>`;
   const left=((u.x+1.1)*T/(MW*T))*100, top=(u.y*T/(MH*T))*100;
   menu.style.left=(u.x>MW-4?((u.x-2.7)*T/(MW*T))*100:left)+'%'; menu.style.top=Math.min(top,72)+'%'; menu.style.display='flex';
+  const fb=menu.querySelector('button'); if(fb) fb.classList.add('kf');
   menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
-    if(a==='attack'){state='target';hideMenu();renderForecast();}
+    if(a==='attack'){startTargeting();}
     else if(a==='items'){state='items';itemSel=u.equip;hideMenu();renderForecast();}
     else if(a==='wait'){afterAction(u);}
     else cancel();});
@@ -893,9 +982,9 @@ function hidePopup(){popup.style.display='none';}
 function deselect(){sel=null;reach=null;target=null;state='select';hideMenu();renderForecast();}
 function cancel(){
   if(busy) return;
-  if(state==='forecast'){state='target';target=null;renderForecast();return;}
+  if(state==='forecast'){state='action';target=null;renderForecast();showMenu(sel);return;}
   if(state==='items'){state='action';showMenu(sel);renderForecast();return;}
-  if(state==='target'){state='action';showMenu(sel);renderForecast();return;}
+  if(state==='prep'){prepSel=null;inspect=null;renderPrep();return;}
   if(state==='action'){ sel.x=origin.x;sel.y=origin.y;sel.px=origin.x;sel.py=origin.y;sel.dir=origin.dir;hideMenu();reach=reachable(sel);state='move';return;}
   if(state==='move'){deselect();return;}
   inspect=null;
@@ -910,22 +999,45 @@ async function onTile(x,y){
     return;
   }
   if(state==='move'){
+    if(u&&u.team==='e'){ const st=bestStopFor(sel,u); if(st){ busy=true; await walk(sel,pathTo(reach,sel,st.x,st.y)); busy=false; state='action'; renderInfo(); openForecast(u); return; } }
     if(reach.stops.has(key(x,y))){ busy=true; await walk(sel,pathTo(reach,sel,x,y)); busy=false; state='action'; showMenu(sel); renderInfo(); return; }
     if(u&&u.team==='p'&&!u.done&&u!==sel){ sel=u; origin={x:u.x,y:u.y,dir:u.dir}; reach=reachable(u); return; }
     deselect(); return;
   }
-  if(state==='target'||state==='forecast'){
-    if(u&&u.team!==sel.team&&targetsFrom(sel,sel.x,sel.y).includes(u)){ target=u; fcMove=(usable(sel).includes(sel.equip)&&inRange(sel.moves[sel.equip],dist(sel.x,sel.y,u.x,u.y)))?sel.equip:bestMoveVs(sel,u); state='forecast'; faceTo(sel,u.x,u.y); renderForecast(); }
-    else if(state==='forecast'&&u===target){ confirmAttack(); }
+  if(state==='forecast'){
+    if(u===target) confirmAttack();
+    else if(u&&u.team!==sel.team&&targetsFrom(sel,sel.x,sel.y).includes(u)) openForecast(u);
     return;
   }
+  if(state==='prep'){ const C=CHAPTERS[chapter], slot=C.deploy.some(([a,b])=>a===x&&b===y);
+    if(u&&u.team==='p'){ if(prepSel&&prepSel!==u){ const [ax,ay]=[prepSel.x,prepSel.y]; prepSel.x=prepSel.px=u.x; prepSel.y=prepSel.py=u.y; u.x=u.px=ax; u.y=u.py=ay; prepSel=null; } else prepSel=prepSel===u?null:u; }
+    else if(slot&&prepSel&&!u){ prepSel.x=prepSel.px=x; prepSel.y=prepSel.py=y; prepSel=null; }
+    else if(u&&u.team==='e'){ inspect=inspect===u?null:u; }
+    else { prepSel=null; inspect=null; }
+    renderPrep(); return; }
 }
 function evTile(ev){const r=cv.getBoundingClientRect();return {x:Math.floor((ev.clientX-r.left)/r.width*MW),y:Math.floor((ev.clientY-r.top)/r.height*MH)};}
-cv.addEventListener('mousemove',ev=>{const t=evTile(ev);if(!hover||hover.x!==t.x||hover.y!==t.y){hover=tile(t.x,t.y)?t:null;renderInfo();if(state==='target')renderForecast();}});
+cv.addEventListener('mousemove',ev=>{const t=evTile(ev);if(!hover||hover.x!==t.x||hover.y!==t.y){hover=tile(t.x,t.y)?t:null;renderInfo();}});
 cv.addEventListener('mouseleave',()=>{hover=null;renderInfo();});
 cv.addEventListener('click',ev=>{const t=evTile(ev);hover=t;onTile(t.x,t.y);renderInfo();});
 cv.addEventListener('contextmenu',ev=>{ev.preventDefault();cancel();});
-document.addEventListener('keydown',ev=>{if(ev.key==='Escape')cancel();if(ev.key==='Enter'&&state==='forecast')confirmAttack();});
+document.addEventListener('keydown',ev=>{
+  if(screen.style.display==='block'||popup.style.display==='flex'||busy) return;
+  const k=ev.key, K=k.toLowerCase(), arrows={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+  const ok=()=>ev.preventDefault();
+  if(state==='forecast'){
+    if(k==='ArrowLeft'||K==='q'){cycleMove(-1);ok();} else if(k==='ArrowRight'||K==='e'){cycleMove(1);ok();}
+    else if(k==='ArrowUp'){cycleTarget(-1);ok();} else if(k==='ArrowDown'||k==='Tab'){cycleTarget(1);ok();}
+    else if(k==='Enter'||k===' '||K==='z'){confirmAttack();ok();} else if(k==='Escape'||K==='x'){cancel();ok();}
+    return; }
+  if(state==='action'&&menu.style.display==='flex'){ const bs=[...menu.querySelectorAll('button')]; let i=bs.findIndex(b=>b.classList.contains('kf'));
+    if(k==='ArrowDown'||k==='ArrowUp'){ i=(i+(k==='ArrowDown'?1:-1)+bs.length)%bs.length; bs.forEach((b,j)=>b.classList.toggle('kf',j===i)); ok(); }
+    else if(k==='Enter'||k===' '||K==='z'){ (bs[i]||bs[0]).click(); ok(); } else if(k==='Escape'||K==='x'){ cancel(); ok(); }
+    return; }
+  if(arrows[k]){ const [dx,dy]=arrows[k]; const h=hover||(sel?{x:sel.x,y:sel.y}:{x:3,y:5}); hover={x:clamp(h.x+dx,0,MW-1),y:clamp(h.y+dy,0,MH-1)}; renderInfo(); ok(); return; }
+  if((k==='Enter'||k===' '||K==='z')&&hover){ onTile(hover.x,hover.y); ok(); return; }
+  if(k==='Escape'||K==='x'){ cancel(); ok(); }
+});
 document.getElementById('endBtn').onclick=endPlayerPhase;
 document.getElementById('restartBtn').onclick=()=>{ if(busy||over) return;
   showPopup(`<h2>Retreat?</h2><p>Leave this chapter. EXP and levels earned so far are kept; no reward.</p><div class="row"><button id="rtNo">Keep fighting</button><button class="primary" id="rtYes">Retreat</button></div>`);
@@ -969,18 +1081,23 @@ function pull(){
   const r=Math.random(); tier=r<TIER_RATES.legendary?'legendary':r<TIER_RATES.legendary+TIER_RATES.rare?'rare':r<.45?'uncommon':'common';
   if(tier==='common'||tier==='uncommon'){ if(save.pity>=RARE_PITY) tier='rare'; }
   if(tier==='rare'||tier==='legendary') save.pity=0;
-  const list=P[tier], sk=list[Math.floor(Math.random()*list.length)];
+  // Pokémon you own in both normal and shiny form are out of the pool; if a whole tier is done, fall to the next one down/up.
+  const open=t=>(P[t]||[]).filter(k=>!isComplete(k));
+  const order={legendary:['legendary','rare','uncommon','common'],rare:['rare','uncommon','common','legendary'],uncommon:['uncommon','common','rare','legendary'],common:['common','uncommon','rare','legendary']}[tier];
+  tier=order.find(t=>open(t).length); if(!tier) return null;
+  const list=open(tier), sk=list[Math.floor(Math.random()*list.length)];
   const shiny=Math.random()<SHINY_RATE;
   const hasN=!!save.roster[rkeyOf(sk,false)], hasS=!!save.roster[rkeyOf(sk,true)];
   let kind, tok=0;
-  if(shiny){ if(!hasS){addRec(sk,true);kind='shiny';} else {tok=3;kind='tokens';} }
+  if(shiny&&!hasS){ addRec(sk,true); kind='shiny'; }
   else if(!hasN){ addRec(sk,false); kind='new'; }
-  else if(hasS){ tok=3; kind='tokens'; }
   else { save.meters[sk]=(save.meters[sk]||0)+1; tok=1;
     if(save.meters[sk]>=SHINY_METER){ save.meters[sk]=0; addRec(sk,true); kind='meter-shiny'; } else kind='meter'; }
   save.tokens+=tok;
   return {sk,tier,shiny:shiny||kind==='meter-shiny',kind,tok,meter:save.meters[sk]||0};
 }
+function isComplete(sk){return !!(save.roster[rkeyOf(sk,false)]&&save.roster[rkeyOf(sk,true)]);}
+function poolLeft(){const P=REGIONS[route.you].pool;return Object.values(P).flat().filter(k=>!isComplete(k)).length;}
 function canLearn(rec,mk){const M=MOVES[mk];return (M.t==='Normal'||SPECIES[rec.sk].ty.includes(M.t))&&!rec.moves.includes(mk);}
 
 // ---------- chapter flow ----------
@@ -999,10 +1116,33 @@ async function startChapter(ci,keys){
     else { const n=C.army.indexOf(C.army.find(a=>a[1]===x&&a[2]===y)); lv=C.elv[0]+(n%(C.elv[1]-C.elv[0]+1)); st=enemyStats(sk,lv); }
     units.push(mkUnit({sk,team:'e',x,y,lv,st,boss,guard:o&&o.guard}));
   }
-  turn=1; phase='p'; state='select'; sel=null; reach=null; target=null; over=false; danger=false; inspect=null; fx=[]; busy=false;
+  turn=1; phase='p'; state='prep'; prepSel=null; sel=null; reach=null; target=null; over=false; danger=false; inspect=null; fx=[]; busy=false;
   document.getElementById('dangerBtn').classList.remove('on');
   hideMenu(); hidePopup(); hideScreen(); updateHUD(); renderInfo(); renderForecast();
 }
+// Battle preparations (FE-style): see the map and enemies, swap formation, equip moves, then start.
+function renderPrep(){
+  const el=document.getElementById('fcPanel'), C=CHAPTERS[chapter], R2=REGIONS[route.foe], boss=SPECIES[R2.bosses[chapter]];
+  const mine=units.filter(u=>u.team==='p'), foes=units.filter(u=>u.team==='e'&&!u.boss);
+  const counts={}; for(const e of foes) counts[e.sp.n]=(counts[e.sp.n]||0)+1;
+  el.style.display='block';
+  el.innerHTML=`<h3>Battle preparations</h3>
+    <div style="font-size:17px;font-weight:600">Ch ${chapter+1}: ${C.name}</div>
+    <div class="ms">${goalText()} · Enemies Lv ${C.elv[0]}–${C.elv[1]} · Boss ${boss.n} Lv ${C.blv}</div>
+    <div class="ms" style="margin-top:3px">${Object.entries(counts).map(([n,c])=>`${n}${c>1?' ×'+c:''}`).join(' · ')}</div>
+    <div class="row"><button id="ppPick">Pick Pokémon (${mine.length}/${C.max})</button><button id="ppDz" class="${danger?'on':''}">Danger zone</button></div>
+    <h3 style="margin-top:10px">Formation &amp; equipped moves</h3>
+    <div class="ms" style="margin-bottom:4px">Click a Pokémon on the map, then a blue tile (or another ally) to swap. Tap a move to equip it.</div>
+    ${mine.map(u=>`<div class="prepu ${prepSel===u?'sel':''}">${portrait(u.sp.key,u.shiny,'Normal','p32')}<span class="nm">${u.sp.n} <span class="ms">Lv ${u.lv}</span></span>
+      ${u.moves.map((m,i)=>`<button class="chipb ${u.equip===i?'eq':''}" data-u="${u.uid}" data-mi="${i}">${MOVES[m.k].n}</button>`).join('')}</div>`).join('')}
+    <div class="row"><button class="primary" id="ppGo" style="font-size:17px;padding:9px">Start battle ▶</button></div>`;
+  document.getElementById('ppGo').onclick=beginBattle;
+  document.getElementById('ppPick').onclick=()=>{ writeBack(); persist(); deploySel=mine.map(u=>u.rkey); showDeploy(chapter); };
+  document.getElementById('ppDz').onclick=()=>{ danger=!danger; document.getElementById('dangerBtn').classList.toggle('on',danger); renderPrep(); };
+  el.querySelectorAll('[data-mi]').forEach(b=>b.onclick=()=>{ const u=units.find(x=>x.uid===+b.dataset.u); u.equip=+b.dataset.mi; if(save.roster[u.rkey]) save.roster[u.rkey].equip=u.equip; persist(); renderPrep(); renderInfo(); });
+}
+async function beginBattle(){ if(state!=='prep') return; state='select'; prepSel=null; inspect=null; renderForecast(); updateHUD();
+  busy=true; await banner(`CHAPTER ${chapter+1}: ${CHAPTERS[chapter].name.toUpperCase()}`,'p'); busy=false; }
 function enemyStats(sk,lv){const sp=SPECIES[sk], st={...sp.st}, n=Math.max(0,lv-BASE_LV); for(const k in st) st[k]+=Math.round((sp.gr[k]||40)*n/100); return st;}
 function goalText(){return CHAPTERS[chapter].goal==='boss'?'Defeat the boss':'Rout the enemy';}
 function writeBack(){
@@ -1019,7 +1159,7 @@ function checkEnd(){
 }
 function endChapter(win){
   writeBack(); const C=CHAPTERS[chapter]; let msg;
-  if(win){ const first=!save.cleared[chapter]; const m=first?C.reward:Math.round(C.reward*REPLAY_PAY), t=first?C.tokens:0;
+  if(win){ const first=!save.cleared[chapter]; const m=first?C.reward:Math.round(C.reward*REPLAY_PAY), t=first?C.tokens:1;
     save.money+=m; save.tokens+=t; save.cleared[chapter]=true;
     msg=`<h2 style="color:${route.col}">Chapter ${chapter+1} clear!</h2><p>${C.name} · ${turn} turn${turn>1?'s':''}</p><p style="font-size:18px">+₽${m}${t?` · +${t} TM token${t>1?'s':''}`:''}</p>${first?'':'<p style="color:var(--mute);font-size:13px">Replay reward (30%)</p>'}`;
   } else msg=`<h2 style="color:#ff9a9a">Retreat</h2><p>Your team fell back. Levels and EXP earned are kept.</p>`;
@@ -1113,7 +1253,7 @@ function showChapters(){
       <div class="ms">${C.goal==='boss'?'Defeat the boss':'Rout the enemy'} · Deploy ${C.max} · ${C.army.length} enemies</div>
       <div class="lvr">Enemies Lv ${C.elv[0]}–${C.elv[1]} · Boss Lv ${C.blv}</div>
       <div class="cb">${portrait(boss.key,false,'Normal','p40')}<span>Boss: <b>${boss.n}</b></span></div>
-      <div class="ms">Reward: ₽${save.cleared[i]?Math.round(C.reward*REPLAY_PAY)+' (replay)':C.reward+(C.tokens?` + ${C.tokens} TM token${C.tokens>1?'s':''}`:'')}</div>
+      <div class="ms">Reward: ₽${save.cleared[i]?Math.round(C.reward*REPLAY_PAY)+' + 1 TM token (replay)':C.reward+(C.tokens?` + ${C.tokens} TM token${C.tokens>1?'s':''}`:'')}</div>
       <button class="primary" data-ch="${i}" ${locked?'disabled':''}>${locked?'Locked':'Deploy'}</button></div>`;}).join('');
   const L=Object.values(save.roster).map(r=>r.lv), top=[...L].sort((a,b)=>b-a);
   showScreen(`${topBar()}<p class="note">Your team: Lv ${Math.min(...L)}–${top[0]} · top 4 average Lv ${(top.slice(0,4).reduce((a,b)=>a+b,0)/Math.min(4,top.length)).toFixed(1)}</p><div class="chaps">${cards}</div>
@@ -1141,33 +1281,34 @@ function showDeploy(ci){
   const render=()=>{
     showScreen(`${topBar()}<h2>Chapter ${ci+1}: ${C.name} · choose up to ${C.max}</h2>
       <div class="mons">${keys.map(k=>monCard(save.roster[k],k,{btn:true,sel:deploySel.includes(k),extra:deploySel.includes(k)?`<div class="dep">Deployed #${deploySel.indexOf(k)+1}</div>`:''})).join('')}</div>
-      <div class="row" style="max-width:420px;margin:12px auto"><button id="bk">Back</button><button class="primary" id="go" ${deploySel.length?'':'disabled'}>Start battle (${deploySel.length}/${C.max})</button></div>`);
+      <div class="row" style="max-width:420px;margin:12px auto"><button id="bk">Back</button><button class="primary" id="go" ${deploySel.length?'':'disabled'}>To preparations (${deploySel.length}/${C.max})</button></div>`);
     bindTabs();
     screen.querySelectorAll('.mon[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;const i=deploySel.indexOf(k);
       if(i>=0) deploySel.splice(i,1); else if(deploySel.length<C.max) deploySel.push(k); render();});
     document.getElementById('bk').onclick=showChapters;
-    document.getElementById('go').onclick=async()=>{await startChapter(ci,deploySel);busy=true;await banner(`CHAPTER ${ci+1}: ${C.name.toUpperCase()}`,'p');busy=false;};
+    document.getElementById('go').onclick=async()=>{await startChapter(ci,deploySel);};
   };
   render();
 }
 function showTeam(){
   const keys=Object.keys(save.roster).sort((a,b)=>save.roster[b].lv-save.roster[a].lv);
-  showScreen(`${topBar()}<h2>Your team</h2><div class="mons">${keys.map(k=>monCard(save.roster[k],k)).join('')}</div>`); bindTabs();
+  showScreen(`${topBar()}<h2>Your team</h2><p class="note">Tap a Pokémon for its full stat sheet.</p><div class="mons">${keys.map(k=>monCard(save.roster[k],k,{btn:true})).join('')}</div>`); bindTabs();
+  screen.querySelectorAll('.mon[data-k]').forEach(b=>b.onclick=()=>{const r=save.roster[b.dataset.k]; showMonCard(r.sk,r.shiny);});
 }
 function showRecruit(results){
   const P=REGIONS[route.you].pool;
-  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<button class="pool ${n||s?'':'dim'}" data-mon="${sk}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></button>`;};
+  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];const done=n&&s; return `<button class="pool ${n||s?'':'dim'} ${done?'done':''}" data-mon="${sk}" title="${done?'Complete: no longer in the pull pool':''}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}${n&&s?' ✓':''}</span></button>`;};
   const res=(results||[]).map((r,i)=>{const sp=SPECIES[r.sk];
     const t={new:'<b class="eff2">NEW!</b>',shiny:'<b class="shiny">✦ SHINY!</b>','meter-shiny':'<b class="shiny">✦ Meter full: SHINY!</b>',meter:`Shiny meter ${r.meter}/${SHINY_METER} · +1 TM token`,tokens:`Already complete · +${r.tok} TM tokens`}[r.kind];
     return `<div class="res ${r.shiny?'sh':''} ${r.tier==='legendary'?'leg':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${TIER_NAME[r.tier]}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
   showScreen(`${topBar()}<h2>Recruit</h2>
-    <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
-      <span class="ms">Recruits join at Lv ${recruitLevel()} · Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
+    <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST||!poolLeft()?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5||!poolLeft()?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
+      <span class="ms">Recruits join at Lv ${recruitLevel()} · Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats give a TM token and fill a ${SHINY_METER}-step shiny meter; owning both forms (✓) removes a Pokémon from the pool</span></div>
     ${res?`<div class="results">${res}</div>`:''}
     <p class="note">Tap any Pokémon to see its card.</p>
     ${['legendary','rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${TIER_NAME[t]} ${Math.round(TIER_RATES[t]*100)}%</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
   bindTabs();
-  const go=n=>{const out=[];for(let i=0;i<n&&save.money>=PULL_COST;i++){save.money-=PULL_COST;out.push(pull());}persist();showRecruit(out);};
+  const go=n=>{const out=[];for(let i=0;i<n&&save.money>=PULL_COST&&poolLeft();i++){save.money-=PULL_COST;const r=pull(); if(r) out.push(r); else save.money+=PULL_COST;}persist();showRecruit(out);};
   document.getElementById('p1').onclick=()=>go(1); document.getElementById('p5').onclick=()=>go(5);
   screen.querySelectorAll('[data-mon]').forEach(b=>b.onclick=()=>showMonCard(b.dataset.mon,false));
   screen.querySelectorAll('.res[data-mon]').forEach(b=>b.onclick=()=>showMonCard(b.dataset.mon,b.dataset.sh==='1'));
@@ -1179,10 +1320,10 @@ function showMonCard(sk,shiny){
   const r=own||newRec(sk,shiny,recruitLevel());
   const lab={hp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'}, max={hp:50,atk:20,def:20,spa:20,spd:20,spe:20};
   const bars=Object.keys(lab).map(k=>`<div class="sb"><span>${lab[k]}</span><b>${r.st[k]}</b><i><u style="width:${Math.min(100,100*r.st[k]/max[k])}%"></u></i><em title="growth chance per level">${sp.gr[k]||40}%</em></div>`).join('');
-  const mv=r.moves.map(k=>{const M=MOVES[k];return `<div class="mv"><span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${sp.ty.includes(M.t)?' <span class="stab">+15 hit</span>':''}</span><span>PP ${M.pp}</span><span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span></div>`;}).join('');
+  const mv=r.moves.map(k=>{const M=MOVES[k];return `<div class="mv"><span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${sp.ty.includes(M.t)?' <span class="stab">+15 hit</span>':''}</span><span>${own&&r.equip===r.moves.indexOf(k)?'<span class="eq">E</span> ':''}PP ${M.pp}</span><span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span></div>`;}).join('');
   const tms=TMS.filter(([k])=>canLearn(r,k)).map(([k])=>`<span class="type" style="background:${TYPE_COL[MOVES[k].t]}">${MOVES[k].n}</span>`).join(' ');
   const traits=[`Move ${sp.mov}`, isFly({sp})?'Flies over all terrain':null, sp.ty.includes('Water')&&!isFly({sp})?'Swims':null, sp.ty.includes('Grass')?'Moves freely in forest':null, (sp.ty.includes('Rock')||sp.ty.includes('Ground'))?'Climbs mountains':null].filter(Boolean).join(' · ');
-  const status=own?`<span class="eff2">In your team · Lv ${r.lv}</span>`:`Joins at <b>Lv ${r.lv}</b> (next chapter's enemy level)`;
+  const status=own?`<span class="eff2">In your team · Lv ${r.lv} · EXP ${r.exp||0}/100</span>`:`Joins at <b>Lv ${r.lv}</b> (next chapter's enemy level)`;
   const modal=document.createElement('div'); modal.className='modal';
   modal.innerHTML=`<div class="mcard" style="border-color:${TIER_COL[tier]||'#556'}">
     <div class="mtop">${portrait(sk,shiny,'Normal','p80')}<div style="text-align:left"><div class="ms">#${String(+sp.id).padStart(3,'0')} · <span style="color:${TIER_COL[tier]};text-transform:uppercase">${TIER_NAME[tier]||'boss'}</span></div>
@@ -1210,7 +1351,7 @@ function showShop(tm=null,key=null){
     body+=`<div class="row" style="max-width:240px"><button id="bk">Back</button></div>`;
   }
   const list=TMS.map(([k,c])=>{const M=MOVES[k];return `<button class="tm ${tm===k?'sel':''}" data-tm="${k}" ${save.tokens<c?'disabled':''}><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${M.c==='P'?'Phys':'Spec'} · Pow ${M.pow} · Hit ${M.acc} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span><span class="cost">${c} tok</span></button>`;}).join('');
-  showScreen(`${topBar()}<h2>TM Shop</h2><p class="note">Spend TM tokens to teach a move (up to 4 per Pokémon). Earn tokens from repeat recruits and first-time chapter clears.</p>
+  showScreen(`${topBar()}<h2>TM Shop</h2><p class="note">Spend TM tokens to teach a move (up to 4 per Pokémon). Earn tokens from repeat recruits, first-time chapter clears and replays.</p>
     ${tm?body:`<div class="tms">${list}</div>`}`);
   bindTabs();
   screen.querySelectorAll('[data-tm]').forEach(b=>b.onclick=()=>showShop(b.dataset.tm));
@@ -1224,7 +1365,7 @@ function showShop(tm=null,key=null){
 }
 
 // test hooks
-window.__game={newRoute:(rid,st)=>{route=ROUTES.find(r=>r.id===rid);save=SAVES[rid]=newSave(st);},start:async(ci,keys)=>await startChapter(ci,keys||Object.keys(save.roster).slice(0,CHAPTERS[ci].max)),get save(){return save},pull,addRec,get units(){return units},forecast,MOVES,SPECIES,CHAPTERS,onTile,endPlayerPhase,setSpeed:s=>SPEED=s,get state(){return state},get over(){return over},get turn(){return turn},planAttack,enemyAct,checkEnd,get phase(){return phase},showChapters,showRecruit,showShop,showDeploy};
+window.__game={newRoute:(rid,st)=>{route=ROUTES.find(r=>r.id===rid);save=SAVES[rid]=newSave(st);},start:async(ci,keys)=>{await startChapter(ci,keys); state='select';},_start0:async(ci,keys)=>await startChapter(ci,keys||Object.keys(save.roster).slice(0,CHAPTERS[ci].max)),get save(){return save},pull,addRec,get units(){return units},forecast,MOVES,SPECIES,CHAPTERS,onTile,endPlayerPhase,setSpeed:s=>SPEED=s,get state(){return state},get over(){return over},get turn(){return turn},planAttack,enemyAct,checkEnd,get phase(){return phase},showChapters,showRecruit,showShop,showDeploy};
 
 MAP=CHAPTERS[0].map; buildMap(); loadSaves(); updateHUD();
 Promise.all([document.fonts?document.fonts.load("700 20px 'Pixelify Sans'").catch(()=>{}):0]).then(()=>{showRoutes();requestAnimationFrame(frame);});
