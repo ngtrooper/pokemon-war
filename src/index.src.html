@@ -113,7 +113,15 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .tm{display:flex;align-items:center;gap:8px;text-align:left;flex-wrap:wrap}.tm .cost{margin-left:auto;color:#9fd0ff;font-weight:600}.tm.sel{border-color:var(--edge)}
 /* portraits come from one shared sheet; zoom scales the 40px tiles */
 .pt{display:inline-block;width:40px;height:40px;background-image:url(atlas/ports.png);background-repeat:no-repeat;image-rendering:pixelated;flex:none;border-radius:3px}
+.pt.pt.pt{width:40px;height:40px;border-radius:3px} /* beat older 64/80px image rules so only one portrait tile shows */
 .pt.portrait{zoom:2;border:1px solid #44528a;background-color:#0b1020}.pt.mp{zoom:1.6}.pt.p80{zoom:2}.pt.p48{zoom:1.2}.pt.p32{zoom:.8}.pt.p40{zoom:1}
+button.pool{color:var(--ink);cursor:pointer}button.pool:hover{border-color:var(--edge)}.res[data-mon]{cursor:pointer}
+.modal{position:fixed;inset:0;background:#000a;display:flex;align-items:flex-start;justify-content:center;z-index:30;overflow:auto;padding:30px 10px}
+.mcard{background:var(--panel);border:2px solid;border-radius:12px;padding:16px 18px;width:min(460px,100%);text-align:left}
+.mcard h3{margin:12px 0 6px;font-size:15px;text-transform:none}.mtop{display:flex;gap:14px;align-items:center}
+.sbars{display:flex;flex-direction:column;gap:4px}.sb{display:grid;grid-template-columns:36px 28px 1fr 38px;gap:8px;align-items:center;font-size:14px}
+.sb span{color:var(--mute)}.sb i{display:block;height:8px;background:#0b1020;border-radius:4px;overflow:hidden}.sb u{display:block;height:100%;background:linear-gradient(90deg,#4aa3ff,#7dff9e)}
+.sb em{font-style:normal;color:var(--mute);font-size:12px;text-align:right}.tml{display:flex;flex-wrap:wrap;gap:4px}
 footer{margin-top:10px;color:var(--mute);font-size:13px;line-height:1.5}
 footer b{color:var(--ink);font-weight:600}
 @media (max-width:860px){#main{flex-direction:column}aside{width:100%}}
@@ -935,7 +943,8 @@ function newSave(starter){
     roster:{[rkeyOf(starter,false)]:newRec(starter,false),[rkeyOf(R.partner,false)]:newRec(R.partner,false)}};
 }
 function levelRec(r,n){const g=SPECIES[r.sk].gr;for(let i=0;i<n;i++){r.lv++;for(const k in r.st) if(Math.random()*100<(g[k]||40)) r.st[k]++;}}
-function recruitLevel(){const L=Object.values(save.roster).map(r=>r.lv);return Math.max(START_LV,Math.floor(L.reduce((a,b)=>a+b,0)/L.length)-1);}
+// Recruits join at the enemy level of your next uncleared chapter (never below START_LV), so they stay useful as chapters are added.
+function recruitLevel(){const next=save.cleared.findIndex(c=>!c), ci=next<0?CHAPTERS.length-1:next; return Math.max(START_LV,CHAPTERS[ci].elv[0]);}
 function addRec(sk,shiny){save.roster[rkeyOf(sk,shiny)]=newRec(sk,shiny,recruitLevel());}
 
 // ---------- gacha ----------
@@ -1092,18 +1101,48 @@ function showTeam(){
 }
 function showRecruit(results){
   const P=REGIONS[route.you].pool;
-  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<div class="pool ${n||s?'':'dim'}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></div>`;};
+  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<button class="pool ${n||s?'':'dim'}" data-mon="${sk}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></button>`;};
   const res=(results||[]).map((r,i)=>{const sp=SPECIES[r.sk];
     const t={new:'<b class="eff2">NEW!</b>',shiny:'<b class="shiny">✦ SHINY!</b>','meter-shiny':'<b class="shiny">✦ Meter full: SHINY!</b>',meter:`Shiny meter ${r.meter}/${SHINY_METER} · +1 TM token`,tokens:`Already complete · +${r.tok} TM tokens`}[r.kind];
-    return `<div class="res ${r.shiny?'sh':''}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
+    return `<div class="res ${r.shiny?'sh':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
   showScreen(`${topBar()}<h2>Recruit</h2>
     <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
-      <span class="ms">Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
+      <span class="ms">Recruits join at Lv ${recruitLevel()} · Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
     ${res?`<div class="results">${res}</div>`:''}
+    <p class="note">Tap any Pokémon to see its card.</p>
     ${['rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${t} ${t==='rare'?'10%':t==='uncommon'?'35%':'55%'}</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
   bindTabs();
   const go=n=>{const out=[];for(let i=0;i<n&&save.money>=PULL_COST;i++){save.money-=PULL_COST;out.push(pull());}persist();showRecruit(out);};
   document.getElementById('p1').onclick=()=>go(1); document.getElementById('p5').onclick=()=>go(5);
+  screen.querySelectorAll('[data-mon]').forEach(b=>b.onclick=()=>showMonCard(b.dataset.mon,false));
+  screen.querySelectorAll('.res[data-mon]').forEach(b=>b.onclick=()=>showMonCard(b.dataset.mon,b.dataset.sh==='1'));
+}
+// Pokémon card: stats as they'd join (or as you own them), growth, moves, learnable TMs.
+function showMonCard(sk,shiny){
+  const sp=SPECIES[sk], P=REGIONS[route.you].pool, tier=['rare','uncommon','common'].find(t=>P[t].includes(sk));
+  const own=save.roster[rkeyOf(sk,shiny)], hasN=save.roster[rkeyOf(sk,false)], hasS=save.roster[rkeyOf(sk,true)];
+  const r=own||newRec(sk,shiny,recruitLevel());
+  const lab={hp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'}, max={hp:50,atk:20,def:20,spa:20,spd:20,spe:20};
+  const bars=Object.keys(lab).map(k=>`<div class="sb"><span>${lab[k]}</span><b>${r.st[k]}</b><i><u style="width:${Math.min(100,100*r.st[k]/max[k])}%"></u></i><em title="growth chance per level">${sp.gr[k]||40}%</em></div>`).join('');
+  const mv=r.moves.map(k=>{const M=MOVES[k];return `<div class="mv"><span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${sp.ty.includes(M.t)?' <span class="stab">+15 hit</span>':''}</span><span>PP ${M.pp}</span><span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span></div>`;}).join('');
+  const tms=TMS.filter(([k])=>canLearn(r,k)).map(([k])=>`<span class="type" style="background:${TYPE_COL[MOVES[k].t]}">${MOVES[k].n}</span>`).join(' ');
+  const traits=[`Move ${sp.mov}`, isFly({sp})?'Flies over all terrain':null, sp.ty.includes('Water')&&!isFly({sp})?'Swims':null, sp.ty.includes('Grass')?'Moves freely in forest':null, (sp.ty.includes('Rock')||sp.ty.includes('Ground'))?'Climbs mountains':null].filter(Boolean).join(' · ');
+  const status=own?`<span class="eff2">In your team · Lv ${r.lv}</span>`:`Joins at <b>Lv ${r.lv}</b> (next chapter's enemy level)`;
+  const modal=document.createElement('div'); modal.className='modal';
+  modal.innerHTML=`<div class="mcard" style="border-color:${TIER_COL[tier]||'#556'}">
+    <div class="mtop">${portrait(sk,shiny,'Normal','p80')}<div style="text-align:left"><div class="ms">#${String(+sp.id).padStart(3,'0')} · <span style="color:${TIER_COL[tier]};text-transform:uppercase">${tier||'boss'}</span></div>
+      <div class="mn" style="font-size:24px">${sp.n}${shiny?' <span class="shiny">✦ Shiny</span>':''}</div><div class="types">${typeTags(sp.ty)}</div>
+      <div class="ms" style="margin-top:4px">${status}</div>
+      <div class="ms">Owned: ${hasN?'● normal':'—'} ${hasS?'<span class="shiny">✦ shiny</span>':''}${!hasS&&(save.meters[sk]||0)?` · shiny meter ${save.meters[sk]}/${SHINY_METER}`:''}</div></div></div>
+    <div class="row" style="justify-content:center;margin:6px 0"><button data-v="0" class="${shiny?'':'primary'}">Normal</button><button data-v="1" class="${shiny?'primary':''}">✦ Shiny (+10%)</button></div>
+    <h3>Stats <span class="ms">(bar = stat, % = growth chance per level)</span></h3><div class="sbars">${bars}</div>
+    <div class="ms" style="margin-top:6px">${traits}</div>
+    <h3>Moves</h3><div class="mvlist">${mv}</div>
+    <h3>Can learn (TM Shop)</h3><div class="tml">${tms||'<span class="ms">None yet</span>'}</div>
+    <div class="row"><button id="mclose" class="primary">Close</button></div></div>`;
+  screen.appendChild(modal);
+  const close=()=>modal.remove(); modal.onclick=e=>{if(e.target===modal)close();}; modal.querySelector('#mclose').onclick=close;
+  modal.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{close();showMonCard(sk,b.dataset.v==='1');});
 }
 function showShop(tm=null,key=null){
   const keys=Object.keys(save.roster);
