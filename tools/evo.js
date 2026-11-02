@@ -11,13 +11,14 @@ const statsOf=b=>{const st={hp:Math.round(10+Math.min(b.hp,130)*.22)};for(const 
 const growOf=b=>{const g={hp:cl(Math.round(b.hp*.5)+30,30,90)};for(const x of ['atk','def','spa','spd','spe'])g[x]=cl(Math.round(b[x]*.55)+15,15,85);return g;};
 const BABY=new Set(['pichu','cleffa','igglybuff','smoochum','elekid','magby','tyrogue','togepi']);
 const evo={}, base={}, newSpecies={}; const lvOf={};
-function gameLv(s){ // evolution level for species s (the evolved form), scaled to our campaign
-  const pre=D.species.get(s.prevo), pk=key(pre.name);
-  if(s.evoLevel) return Math.round(5+s.evoLevel*0.42);
-  const prevStage=lvOf[pk]||null;
-  if(BABY.has(pk)) return 10;
-  if(s.evoType==='trade') return (prevStage||12)+5;
-  return Math.max(12,(prevStage||8)+4); // stones, friendship, etc.
+function gameLv(s){ // evolution level for species s (the evolved form). Real game levels; others get fixed levels. Cap 45 (finale is Lv 50).
+  const pre=D.species.get(s.prevo), pk=key(pre.name), prevStage=lvOf[pk]||null;
+  let lv;
+  if(s.evoLevel) lv=s.evoLevel;
+  else if(BABY.has(pk)) lv=15;
+  else if(s.evoType==='trade') lv=(prevStage||20)+10;
+  else lv=Math.max(25,(prevStage||0)+8);   // stones, friendship, etc.
+  return Math.min(45,lv);
 }
 function walk(s){ const k=key(s.name); base[k]=statsOf(s.baseStats);
   for(const e of s.evos){ const t=D.species.get(e); if(!t.exists||t.num>251||t.forme) continue; const tk=key(t.name);
