@@ -80,12 +80,13 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 #screen{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at top,#1d2750,#0b0f1d 70%);overflow:auto;display:none}
 .scr{position:relative;max-width:1000px;margin:0 auto;padding:18px 14px 40px;text-align:center}
 .titlebg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at top,#2a3a78,#0b0f1d 70%)}
-.titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.3);opacity:0;transition:opacity 1.2s ease}
+.titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.4);opacity:0;transition:opacity 1.2s ease}
 .titlebg .yt.on{opacity:1}
 .titlebg .yt iframe{width:100%;height:100%;border:0;pointer-events:none}
 .titlebg .shade{position:absolute;inset:0;background:linear-gradient(#0b0f1d99,#0b0f1dcc)}
 #screen{isolation:isolate}
 .sndbtn{position:fixed;right:14px;top:12px;z-index:2}
+.ver{position:fixed;left:10px;bottom:8px;font-size:12px;color:#8892b8;opacity:.8}
 .tester{margin:14px auto;max-width:760px;text-align:left;background:#141b33;border:1px dashed #4a5a96;border-radius:8px;padding:8px 12px}.tester summary{cursor:pointer;color:var(--mute)}
 .scr h1.st{font-size:44px;margin:10px 0 0}.scr h1.st span{color:var(--edge)}
 .scr h2{margin:14px 0 10px}.scr h3{margin:14px 0 6px;text-transform:capitalize}
@@ -440,6 +441,7 @@ const CHAPTERS = [
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
 ];
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
+const BUILD='/*BUILD*/';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const START_LV=7, PULL_COST=200, SHINY_RATE=.05, SHINY_METER=3, RARE_PITY=10;
 let route=null, chapter=0, save=null;
@@ -1029,16 +1031,22 @@ function monCard(r,key,opts={}){
 // ---------- title video ----------
 // Uses the YouTube player API so the video stays invisible until it is actually playing:
 // no play button, no loading spinner. Edges are cropped (scale 1.3) to hide the title bar and logo.
-let titlePlayer=null, titleSound=false;
+let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=6000;
 function startTitleVideo(){
   const make=()=>{ const el=document.getElementById('ytbg'); if(!el) return;
     titlePlayer=new YT.Player(el,{videoId:TITLE_VIDEO,host:'https://www.youtube-nocookie.com',
-      playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0,loop:1,playlist:TITLE_VIDEO},
+      playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0},
       events:{
         onReady:e=>{ try{ titleSound?e.target.unMute():e.target.mute(); e.target.playVideo(); }catch(err){} },
         onStateChange:e=>{ const box=document.querySelector('.titlebg .yt'); if(!box) return;
-          if(e.data===YT.PlayerState.PLAYING) box.classList.add('on');
-          if(e.data===YT.PlayerState.ENDED){ e.target.seekTo(0); e.target.playVideo(); } } }});
+          // YouTube shows its own controls for the first few seconds of playback. Play hidden until they
+          // fade, then rewind to the start and fade the video in.
+          if(e.data===YT.PlayerState.PLAYING&&!box.dataset.warm){ box.dataset.warm='1';
+            setTimeout(()=>{ try{ e.target.seekTo(0,true); }catch(err){} setTimeout(()=>box.classList.add('on'),250); },TITLE_WARMUP); }
+          if(e.data===YT.PlayerState.ENDED){ e.target.seekTo(0,true); e.target.playVideo(); } } }});
+    // Loop just before the end so YouTube never shows its end screen or reloads (which brings controls back).
+    clearInterval(titleLoop); titleLoop=setInterval(()=>{ try{ if(!document.querySelector('.titlebg')){clearInterval(titleLoop);return;}
+      const d=titlePlayer.getDuration(), t=titlePlayer.getCurrentTime(); if(d&&t>d-1.2) titlePlayer.seekTo(0,true); }catch(err){} },400);
   };
   if(window.YT&&YT.Player) make();
   else { window.onYouTubeIframeAPIReady=make;
@@ -1054,7 +1062,7 @@ function showRoutes(){
       <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`${portrait(sk,false,'Normal','p40')}`).join('')}</div>
       <div class="pick-s">${sv?`Saved · ${sv.cleared.filter(Boolean).length}/${CHAPTERS.length} chapters · ${Object.keys(sv.roster).length} Pokémon`:rt.blurb}</div></button>`;};
   showScreen(`<div class="titlebg"><div class="yt"><div id="ytbg"></div></div><div class="shade"></div></div>
-    <button id="snd" class="sndbtn">🔇 Sound</button>
+    <button id="snd" class="sndbtn">🔇 Sound</button><div class="ver">build ${BUILD}</div>
     <h1 class="st">Pokémon <span>War</span></h1><h2>Choose your army</h2><div class="picks">${ROUTES.map(card).join('')}</div>
     <p class="note">Each army recruits only its own region's Pokémon. Progress saves in this browser.</p>`);
   const snd=document.getElementById('snd');
