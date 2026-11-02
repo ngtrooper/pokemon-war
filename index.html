@@ -108,6 +108,7 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .results{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:14px 0}
 .res{width:150px;background:var(--panel);border:2px solid;border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:4px;animation:flip .5s both}
 .res img{width:80px;height:80px;image-rendering:pixelated;border-radius:6px}.res .rt{text-transform:uppercase;font-size:12px;letter-spacing:1px;font-weight:700}
+.res.leg{box-shadow:0 0 22px #ff7ad9aa;background:linear-gradient(160deg,#3a1838,var(--panel))}
 .res.sh{box-shadow:0 0 18px #ffd84a88;background:linear-gradient(160deg,#3a3418,var(--panel))}
 @keyframes flip{from{opacity:0;transform:rotateY(90deg) scale(.8)}to{opacity:1;transform:none}}
 .pools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
@@ -400,6 +401,10 @@ const AUTO_SPECIES = {
 };
 const AUTO_POOLS = {"kanto":{"rare":["bulbasaur","charmander","squirtle","pikachu","hitmonlee","hitmonchan","chansey","kangaskhan","mrmime","scyther","jynx","electabuzz","magmar","pinsir","tauros","lapras","eevee","aerodactyl","dratini"],"uncommon":["sandshrew","clefairy","oddish","venonat","psyduck","mankey","growlithe","poliwag","abra","machop","bellsprout","tentacool","geodude","ponyta","slowpoke","magnemite","farfetchd","doduo","seel","grimer","shellder","gastly","drowzee","krabby","voltorb","exeggcute","cubone","lickitung","koffing","rhyhorn","tangela","goldeen","staryu","porygon","omanyte","kabuto"],"common":["caterpie","weedle","pidgey","rattata","spearow","ekans","nidoranf","nidoranm","vulpix","jigglypuff","zubat","paras","diglett","meowth","horsea","magikarp"]},"johto":{"rare":["chikorita","cyndaquil","totodile","togepi","mareep","girafarig","shuckle","mantine","skarmory","stantler","miltank","larvitar"],"uncommon":["chinchou","natu","sudowoodo","aipom","yanma","murkrow","misdreavus","dunsparce","gligar","snubbull","qwilfish","sneasel","teddiursa","corsola","remoraid","delibird","houndour","phanpy","smoochum","elekid","magby"],"common":["sentret","hoothoot","ledyba","spinarak","pichu","cleffa","igglybuff","marill","hoppip","sunkern","wooper","pineco","slugma","swinub","tyrogue"]}};
 for(const k in AUTO_SPECIES) if(!SPECIES[k]) SPECIES[k]=AUTO_SPECIES[k];
+// 1% legendary tier: the pseudo-legendaries. Weak at first, so they grow ~30% faster (late bloomers).
+const LEGENDARY={kanto:['dratini'],johto:['larvitar']};
+for(const r in LEGENDARY){ const P=AUTO_POOLS[r]; P.rare=P.rare.filter(k=>!LEGENDARY[r].includes(k)); P.legendary=LEGENDARY[r];
+  for(const k of LEGENDARY[r]){ const g=SPECIES[k].gr; for(const x in g) g[x]=Math.min(95,Math.round(g[x]*1.3)); } }
 for(const k in SPECIES) SPECIES[k].key=k;
 
 // Regions are data: add a region here (pool + army roles + bosses) and a route below to make a new campaign.
@@ -423,27 +428,29 @@ const ROUTES = [
 // so a new chapter only needs a level range. blv = the boss's displayed level (boss stats are hand-set per boss).
 const BASE_LV=5;
 const CHAPTERS = [
-  {name:'River Crossing', goal:'rout', max:3, elv:[5,6], blv:8, reward:800, tokens:1,
+  {name:'River Crossing', goal:'rout', max:3, elv:[5,6], blv:8, reward:600, tokens:1,
    map:["^^T,,...~~..TT^^","^T,,....~~...T^^","T,,..T..~~..,,T^","..,..TT.==...,,T","....,,..~~..H.,,",".,,.....~~......","..H..T..~~..TT..","...TT...==...T,,",",,......~~..,,.^",",,T.....~~...^^^","TTT,,..~~~..^^^^"],
    deploy:[[2,4],[3,5],[2,6]],
    army:[['fast',11,2],['bird',11,8],['swim',9,5],['tank',13,6,{guard:true}],['boss',12,4]]},
-  {name:'Forest Ambush', goal:'rout', max:4, elv:[6,7], blv:10, reward:1000, tokens:1,
+  {name:'Forest Ambush', goal:'rout', max:4, elv:[6,7], blv:10, reward:700, tokens:1,
    map:["TTTT,,..TTTTT,TT","T,,..,..T,,..,,T","T..TT...T..TT..T","..,,T.,,,,.T....","..,.......,..,TT","TT..TT.H..TT....",".....,....,..T..","..TT,,.TT.....,,",",,T....T..TT..TT","T,,..,,...,,..TT","TTTT..TTTT,,TTTT"],
    deploy:[[0,4],[1,4],[0,6],[1,6]],
    army:[['fast',9,3],['bird',10,1],['poison',11,5,{guard:true}],['mid',12,3],['tank',9,7],['heavy',13,6,{guard:true}],['boss',14,5]]},
-  {name:'Mountain Pass', goal:'boss', max:5, elv:[7,8], blv:12, reward:1200, tokens:1,
+  {name:'Mountain Pass', goal:'boss', max:5, elv:[7,8], blv:12, reward:800, tokens:1,
    map:["^^^^^#....#^^^^^","^^,,.#.,,.#..^^^","^,,..#.,,....T^^","..,.....T.#..F^^","...,.#..T.#.FFF^","..H..#....#..F^^","...,.#.,,.....T^",".,,..#.,,.#..,^^","^,,.....T.#,,.^^","^^...#....#..^^^","^^^^^#....#^^^^^"],
    deploy:[[0,3],[1,3],[0,4],[1,5],[0,6]],
    army:[['fast',7,1],['mid',6,4],['bird',8,5],['poison',7,7],['swim',7,9],['tank',11,3,{guard:true}],['heavy',12,6,{guard:true}],['fast',12,8],['boss',13,4]]},
-  {name:'Ruined Fortress', goal:'boss', max:6, elv:[9,10], blv:14, reward:1600, tokens:2,
+  {name:'Ruined Fortress', goal:'boss', max:6, elv:[9,10], blv:14, reward:1000, tokens:2,
    map:["TT,....~~..#####","T,,....~~..#F.F#",",,..H..==..#...#","..,....~~.,#...#","...,...~~.,....#","..T....~~..#.F.#","..T....~~.,....#","...,...==.,#...#",",,..H..~~..#F.F#","T,,....~~..#...#","TT,....~~..#####"],
    deploy:[[0,3],[1,3],[1,4],[0,5],[1,6],[0,7]],
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
 ];
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
-const BUILD='2026-11-01 23:50';
+const BUILD='2026-11-01 23:52';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
-const START_LV=7, PULL_COST=200, SHINY_RATE=.05, SHINY_METER=3, RARE_PITY=10;
+const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
+const REPLAY_PAY=.3;
+const START_LV=7, PULL_COST=300, SHINY_RATE=.05, SHINY_METER=3, RARE_PITY=10;
 let route=null, chapter=0, save=null;
 const sideInfo=t=>t==='p'?{name:route.team,region:REGIONS[route.you].region,col:route.col}:{name:route.foeName,region:REGIONS[route.foe].region,col:route.foeCol};
 
@@ -955,8 +962,9 @@ function addRec(sk,shiny){save.roster[rkeyOf(sk,shiny)]=newRec(sk,shiny,recruitL
 function pull(){
   const P=REGIONS[route.you].pool;
   save.pity++; let tier;
-  if(save.pity>=RARE_PITY) tier='rare'; else { const r=Math.random(); tier=r<.10?'rare':r<.45?'uncommon':'common'; }
-  if(tier==='rare') save.pity=0;
+  const r=Math.random(); tier=r<TIER_RATES.legendary?'legendary':r<TIER_RATES.legendary+TIER_RATES.rare?'rare':r<.45?'uncommon':'common';
+  if(tier==='common'||tier==='uncommon'){ if(save.pity>=RARE_PITY) tier='rare'; }
+  if(tier==='rare'||tier==='legendary') save.pity=0;
   const list=P[tier], sk=list[Math.floor(Math.random()*list.length)];
   const shiny=Math.random()<SHINY_RATE;
   const hasN=!!save.roster[rkeyOf(sk,false)], hasS=!!save.roster[rkeyOf(sk,true)];
@@ -1007,9 +1015,9 @@ function checkEnd(){
 }
 function endChapter(win){
   writeBack(); const C=CHAPTERS[chapter]; let msg;
-  if(win){ const first=!save.cleared[chapter]; const m=first?C.reward:Math.round(C.reward*.4), t=first?C.tokens:0;
+  if(win){ const first=!save.cleared[chapter]; const m=first?C.reward:Math.round(C.reward*REPLAY_PAY), t=first?C.tokens:0;
     save.money+=m; save.tokens+=t; save.cleared[chapter]=true;
-    msg=`<h2 style="color:${route.col}">Chapter ${chapter+1} clear!</h2><p>${C.name} · ${turn} turn${turn>1?'s':''}</p><p style="font-size:18px">+₽${m}${t?` · +${t} TM token${t>1?'s':''}`:''}</p>${first?'':'<p style="color:var(--mute);font-size:13px">Replay reward (40%)</p>'}`;
+    msg=`<h2 style="color:${route.col}">Chapter ${chapter+1} clear!</h2><p>${C.name} · ${turn} turn${turn>1?'s':''}</p><p style="font-size:18px">+₽${m}${t?` · +${t} TM token${t>1?'s':''}`:''}</p>${first?'':'<p style="color:var(--mute);font-size:13px">Replay reward (30%)</p>'}`;
   } else msg=`<h2 style="color:#ff9a9a">Retreat</h2><p>Your team fell back. Levels and EXP earned are kept.</p>`;
   persist();
   showPopup(`${msg}<div class="row"><button class="primary" id="contBtn">Continue</button></div>`);
@@ -1020,7 +1028,7 @@ function endChapter(win){
 const screen=document.getElementById('screen');
 function showScreen(html){screen.innerHTML=`<div class="scr">${html}</div>`;screen.style.display='block';screen.scrollTop=0;over=true;}
 function hideScreen(){screen.style.display='none';}
-const TIER_COL={rare:'#ffd84a',uncommon:'#6fb6ff',common:'#b9bfd6'};
+const TIER_COL={legendary:'#ff7ad9',rare:'#ffd84a',uncommon:'#6fb6ff',common:'#b9bfd6'};
 function monCard(r,key,opts={}){
   const sp=SPECIES[r.sk];
   return `<${opts.btn?'button':'div'} class="mon ${opts.sel?'sel':''}" ${opts.btn?`data-k="${key}" ${opts.disabled?'disabled':''}`:''}>
@@ -1090,17 +1098,17 @@ function showChapters(){
       <div class="ms">${C.goal==='boss'?'Defeat the boss':'Rout the enemy'} · Deploy ${C.max} · ${C.army.length} enemies</div>
       <div class="lvr">Enemies Lv ${C.elv[0]}–${C.elv[1]} · Boss Lv ${C.blv}</div>
       <div class="cb">${portrait(boss.key,false,'Normal','p40')}<span>Boss: <b>${boss.n}</b></span></div>
-      <div class="ms">Reward: ₽${save.cleared[i]?Math.round(C.reward*.4)+' (replay)':C.reward+(C.tokens?` + ${C.tokens} TM token${C.tokens>1?'s':''}`:'')}</div>
+      <div class="ms">Reward: ₽${save.cleared[i]?Math.round(C.reward*REPLAY_PAY)+' (replay)':C.reward+(C.tokens?` + ${C.tokens} TM token${C.tokens>1?'s':''}`:'')}</div>
       <button class="primary" data-ch="${i}" ${locked?'disabled':''}>${locked?'Locked':'Deploy'}</button></div>`;}).join('');
   const L=Object.values(save.roster).map(r=>r.lv), top=[...L].sort((a,b)=>b-a);
   showScreen(`${topBar()}<p class="note">Your team: Lv ${Math.min(...L)}–${top[0]} · top 4 average Lv ${(top.slice(0,4).reduce((a,b)=>a+b,0)/Math.min(4,top.length)).toFixed(1)}</p><div class="chaps">${cards}</div>
-    <p class="note">No permadeath: fainted Pokémon just leave that battle. Clear a chapter to unlock the next; replays pay 40%.</p>
+    <p class="note">No permadeath: fainted Pokémon just leave that battle. Clear a chapter to unlock the next; replays pay 30%.</p>
     <details class="tester"><summary>Tester tools</summary><div class="row" style="flex-wrap:wrap">
       <button data-t="money">+₽2000</button><button data-t="tok">+10 TM tokens</button><button data-t="lv">Team +3 levels</button>
       <button data-t="unlock">Unlock all chapters</button><button data-t="all">Add every ${REGIONS[route.you].region} Pokémon</button><button data-t="shiny">Add every shiny</button></div></details>
     <div class="row" style="max-width:260px"><button id="wipe">Reset this army's save</button></div>`);
   bindTabs();
-  screen.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t, P=REGIONS[route.you].pool, all=[...P.rare,...P.uncommon,...P.common];
+  screen.querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{const t=b.dataset.t, P=REGIONS[route.you].pool, all=[...P.legendary,...P.rare,...P.uncommon,...P.common];
     if(t==='money') save.money+=2000; if(t==='tok') save.tokens+=10;
     if(t==='lv') for(const r of Object.values(save.roster)) levelRec(r,3);
     if(t==='unlock') save.cleared=save.cleared.map((c,i)=>c||i<CHAPTERS.length-1);
@@ -1136,13 +1144,13 @@ function showRecruit(results){
   const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<button class="pool ${n||s?'':'dim'}" data-mon="${sk}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></button>`;};
   const res=(results||[]).map((r,i)=>{const sp=SPECIES[r.sk];
     const t={new:'<b class="eff2">NEW!</b>',shiny:'<b class="shiny">✦ SHINY!</b>','meter-shiny':'<b class="shiny">✦ Meter full: SHINY!</b>',meter:`Shiny meter ${r.meter}/${SHINY_METER} · +1 TM token`,tokens:`Already complete · +${r.tok} TM tokens`}[r.kind];
-    return `<div class="res ${r.shiny?'sh':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
+    return `<div class="res ${r.shiny?'sh':''} ${r.tier==='legendary'?'leg':''}" data-mon="${r.sk}" data-sh="${r.shiny?1:0}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
   showScreen(`${topBar()}<h2>Recruit</h2>
     <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
       <span class="ms">Recruits join at Lv ${recruitLevel()} · Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
     ${res?`<div class="results">${res}</div>`:''}
     <p class="note">Tap any Pokémon to see its card.</p>
-    ${['rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${t} ${t==='rare'?'10%':t==='uncommon'?'35%':'55%'}</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
+    ${['legendary','rare','uncommon','common'].map(t=>`<h3 style="color:${TIER_COL[t]}">${t} ${Math.round(TIER_RATES[t]*100)}%</h3><div class="pools">${P[t].map(own).join('')}</div>`).join('')}`);
   bindTabs();
   const go=n=>{const out=[];for(let i=0;i<n&&save.money>=PULL_COST;i++){save.money-=PULL_COST;out.push(pull());}persist();showRecruit(out);};
   document.getElementById('p1').onclick=()=>go(1); document.getElementById('p5').onclick=()=>go(5);
@@ -1151,7 +1159,7 @@ function showRecruit(results){
 }
 // Pokémon card: stats as they'd join (or as you own them), growth, moves, learnable TMs.
 function showMonCard(sk,shiny){
-  const sp=SPECIES[sk], P=REGIONS[route.you].pool, tier=['rare','uncommon','common'].find(t=>P[t].includes(sk));
+  const sp=SPECIES[sk], P=REGIONS[route.you].pool, tier=['legendary','rare','uncommon','common'].find(t=>P[t].includes(sk));
   const own=save.roster[rkeyOf(sk,shiny)], hasN=save.roster[rkeyOf(sk,false)], hasS=save.roster[rkeyOf(sk,true)];
   const r=own||newRec(sk,shiny,recruitLevel());
   const lab={hp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'}, max={hp:50,atk:20,def:20,spa:20,spd:20,spe:20};

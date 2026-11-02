@@ -10,7 +10,7 @@ A Fire Emblem–style tactics game with Pokémon Mystery Dungeon sprites. Combat
 - Physical/special damage split; type matchups shift Hit (+20 / −20) and damage (+10% / −10%)
 - Same-type moves get +15 Hit; FE-style two-roll hit chance (the forecast shows the true %)
 - 71 Kanto and 48 Johto basic Pokémon to recruit (stats generated from official base stats via `@pkmn/dex`)
-- Recruit gacha (5% shiny, 3-repeat shiny meter, rare guaranteed every 10 pulls); extra copies become TM tokens
+- Recruit gacha: ₽300 a pull; legendary 1% (pseudo-legendaries), rare 9%, uncommon 35%, common 55%; 5% shiny; 3-repeat shiny meter; rare guaranteed every 10 pulls; extra copies become TM tokens
 - TM shop to teach moves (up to 4 per Pokémon)
 - No permadeath; progress saves in your browser
 - **Tester tools** on the chapter screen: money, tokens, levels, unlock chapters, add Pokémon
