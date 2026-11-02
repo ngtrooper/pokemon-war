@@ -191,7 +191,7 @@ footer b{color:var(--ink);font-weight:600}
   </div>
   <footer>
     <b>How to play:</b> click your Pokémon → click a blue tile to move (click its own tile to stay) → Attack or Wait.
-    Moves work like weapons: each has power, accuracy, crit, range and PP (uses). Click an enemy while moving to walk next to it and open the forecast; switch moves with ◀ ▶ and targets with ▲ ▼. Keyboard: arrows move the cursor, Enter/Z selects, Esc/X goes back.
+    Moves work like weapons: each has power, accuracy, crit, range and PP (uses). Healers (Softboiled, Milk Drink, Heal Pulse…) get a ✚ Heal command to restore an ally’s HP and earn EXP. Click an enemy while moving to walk next to it and open the forecast; switch moves with ◀ ▶ and targets with ▲ ▼. Keyboard: arrows move the cursor, Enter/Z selects, Esc/X goes back.
     Damage comes from the physical/special split (Atk vs Def, SpA vs SpD). Type matchups work like FE's weapon triangle: super-effective +20 Hit and +10% damage (×4: +40 Hit, +25%), resisted −20 Hit and −10% (×¼: −40, −25%), immune can't hit. Same-type moves get +15 Hit. Hit % shown is the true chance (FE-style two-roll average, so 80+ almost always lands). A Pokémon counters with its equipped move (the last one it used, marked E) when it can reach. Units 5+ Spe faster strike twice. Click an enemy to see its range. Esc / right-click cancels.
     <br>Fainted Pokémon leave the battle but come back next chapter. Oran Trees heal 20% at the start of your phase. Water-types swim, Grass-types move freely through forest, Rock/Ground climb mountains, Flying-types ignore all terrain and can stop over water.
     <br>Sprites &amp; portraits: Pokémon Mystery Dungeon (Spike Chunsoft), via the PMDCollab SpriteCollab project. Pokémon © Nintendo / Game Freak / The Pokémon Company. Non-commercial fan prototype.
@@ -291,11 +291,21 @@ const MOVES = {
   powdersnow:  {n:'Powder Snow',  t:'Ice',     c:'S',pow:6,acc:100,crit:0, rng:[1,1],pp:25},
   dragonrage:  {n:'Dragon Rage',  t:'Dragon',  c:'S',pow:7,acc:100,crit:0, rng:[1,2],pp:15},
   splash:      {n:'Splash',       t:'Normal',  c:'P',pow:0,acc:100,crit:0, rng:[1,1],pp:40,d:'…nothing happens'},
-  earthquake:  {n:'Earthquake',   t:'Ground',  c:'P',pow:14,acc:100,crit:0, rng:[1,1],pp:10,fx:'quake',d:'Hits every non-flying Pokémon around the user, allies too; damage is split between them; can’t be countered'},
+  earthquake:  {n:'Earthquake',   t:'Ground',  c:'P',pow:14,acc:100,crit:0, rng:[1,1],pp:10,fx:'quake',d:'Hits every non-flying enemy around the user; damage is split between them (each takes at least half); can’t be countered'},
+  // Support moves: fx heal (one ally), healall (allies within 2), self (user). stat = which stat powers the heal.
+  softboiled:  {n:'Softboiled',   t:'Normal',  c:'S',pow:8,acc:100,crit:0, rng:[1,1],pp:10,fx:'heal',stat:'spd',d:'Heals an adjacent ally (SpD + 8)'},
+  milkdrink:   {n:'Milk Drink',   t:'Normal',  c:'S',pow:8,acc:100,crit:0, rng:[1,1],pp:10,fx:'heal',stat:'spd',self:.25,d:'Heals an adjacent ally (SpD + 8) and the user a little'},
+  healpulse:   {n:'Heal Pulse',   t:'Psychic', c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:10,fx:'heal',stat:'spa',d:'Heals an ally 1–2 tiles away (SpA + 6)'},
+  wish:        {n:'Wish',         t:'Fairy',   c:'S',pow:3,acc:100,crit:0, rng:[1,3],pp:5, fx:'heal',stat:'spa',d:'Heals an ally up to 3 tiles away (SpA + 3)'},
+  healbell:    {n:'Heal Bell',    t:'Normal',  c:'S',pow:4,acc:100,crit:0, rng:[0,0],pp:5, fx:'healall',stat:'spd',d:'Heals every ally within 2 tiles ((SpD + 4) ÷ 2)'},
+  synthesis:   {n:'Synthesis',    t:'Grass',   c:'S',pow:0,acc:100,crit:0, rng:[0,0],pp:5, fx:'self',d:'Heals the user for half its max HP'},
+  moonlight:   {n:'Moonlight',    t:'Fairy',   c:'S',pow:0,acc:100,crit:0, rng:[0,0],pp:5, fx:'self',d:'Heals the user for half its max HP'},
+  recover:     {n:'Recover',      t:'Psychic', c:'S',pow:0,acc:100,crit:0, rng:[0,0],pp:5, fx:'self',d:'Heals the user for half its max HP'},
   hydropump:   {n:'Hydro Pump',   t:'Water',   c:'S',pow:9,acc:75, crit:0, rng:[2,3],pp:5, d:'Long range (2–3), can’t hit adjacent'},
 };
 // Learnable TMs: a Pokémon can learn a TM if it shares the move's type, or if the TM is Normal-type.
 const TMS = [
+  ['healpulse',4,['Psychic','Fairy','Water']],['wish',5,['Fairy','Psychic']],['synthesis',2,['Grass']],['moonlight',2,['Fairy','Dark']],['recover',3,['Psychic','Water']],
   ['swift',2],['bodyslam',3],['thunderbolt',3],['flamethrower',3],['surf',3],['hydropump',3],['gigadrain',3],
   ['rockslide',3],['dig',3],['earthquake',4],['brickbreak',3],['aerialace',2],['psychic',3],['sludgebomb',3],['xscissor',3],
   ['ironhead',3],['crunch',3],['dazzlinggleam',3],
@@ -570,18 +580,21 @@ const BASE_ST = {"bulbasaur":{"hp":20,"atk":6,"def":6,"spa":8,"spd":8,"spe":6},"
 for(const k in EVO_SPECIES) if(!SPECIES[k]) SPECIES[k]=EVO_SPECIES[k];
 // Branching lines (Eevee, Poliwhirl, Gloom, Slowpoke, Tyrogue…) offer every branch at the same level.
 for(const k in EVOS){ const m=Math.min(...EVOS[k].map(e=>e.lv)); EVOS[k].forEach(e=>e.lv=m); }
+// Natural healers (like FE clerics): Softboiled / Milk Drink / Heal Bell lines.
+const NATIVE_HEAL={chansey:['softboiled','healbell'],blissey:['softboiled','healbell'],clefairy:['softboiled'],clefable:['softboiled'],cleffa:['softboiled'],togepi:['softboiled'],togetic:['softboiled'],miltank:['milkdrink','healbell']};
+for(const k in NATIVE_HEAL) if(SPECIES[k]){ const mv=SPECIES[k].mv; for(const m of NATIVE_HEAL[k]) if(!mv.includes(m)){ if(mv.length>=4) mv.pop(); mv.splice(1,0,m); } }
 for(const k in SPECIES) SPECIES[k].key=k;
 
 // Regions are data: add a region here (pool + army roles + bosses) and a route below to make a new campaign.
 const REGIONS = {
   kanto:{region:'Kanto',starters:['bulbasaur','charmander','squirtle'],partner:'pikachu',
     pool:AUTO_POOLS.kanto,
-    roles:{fast:'rattata',bird:'pidgey',swim:'poliwag',tank:'geodude',mid:'growlithe',poison:'oddish',heavy:'machop',psy:'abra',air:'spearow',ghost:'gastly',wall:'shellder',mid2:'ponyta'},
+    roles:{fast:'rattata',bird:'pidgey',swim:'poliwag',tank:'geodude',mid:'growlithe',poison:'oddish',heavy:'machop',psy:'abra',air:'spearow',ghost:'gastly',wall:'shellder',mid2:'ponyta',healer:'chansey'},
     roles2:{fast:'raticate',bird:'pidgeotto',swim:'poliwhirl',tank:'graveler',mid:'rapidash',poison:'gloom',heavy:'machoke',psy:'kadabra',air:'fearow',ghost:'haunter'},
     bosses:['machop','onix','arcanine','snorlax','nidoking','machamp','gyarados','alakazam']},
   johto:{region:'Johto',starters:['chikorita','cyndaquil','totodile'],partner:'mareep',
     pool:AUTO_POOLS.johto,
-    roles:{fast:'sentret',bird:'hoothoot',swim:'wooper',tank:'marill',mid:'snubbull',poison:'spinarak',heavy:'sudowoodo',psy:'natu',air:'murkrow',ghost:'misdreavus',wall:'pineco',mid2:'snubbull'},
+    roles:{fast:'sentret',bird:'hoothoot',swim:'wooper',tank:'marill',mid:'snubbull',poison:'spinarak',heavy:'sudowoodo',psy:'natu',air:'murkrow',ghost:'misdreavus',wall:'pineco',mid2:'snubbull',healer:'miltank'},
     roles2:{fast:'furret',bird:'noctowl',swim:'quagsire',tank:'forretress',mid:'granbull',poison:'ariados',heavy:'azumarill',psy:'xatu',air:'crobat',ghost:'misdreavus'},
     bosses:['sudowoodo','heracross','ursaring','steelix','houndoom','ampharos','skarmory','kingdra']},
 };
@@ -612,13 +625,13 @@ const CHAPTERS = [
    deploy:[[0,3],[1,3],[1,4],[0,5],[1,6],[0,7]],
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
   // Chapters 5–8: FE-style reinforcements (flyers arrive over cliffs, water and walls), new goals (survive, seize), sand and thrones.
-  ...[{"name": "Canyon Ambush", "goal": "rout", "max": 6, "elv": [16, 18], "blv": 20, "reward": 1100, "tokens": 2, "map": ["^^^##TTT..##^^^^", "^,,##T,....#,,^^", ",,..#T..DD.#..,^", "....#..DDDD...,,", "........DD......", "..H.....DDD...H.", "........DD......", "....#..DDDD...,,", ",,..#T..DD.#..,^", "^,,##T,....#,,^^", "^^^##TTT..##^^^^"], "deploy": [[1, 4], [1, 5], [1, 6], [0, 4], [0, 5], [0, 6]], "army": [["psy", 6, 1, {"guard": true}], ["fast", 5, 2, {"guard": true}], ["poison", 6, 9, {"guard": true}], ["air", 13, 0], ["wall", 11, 4, {"guard": true}], ["wall", 11, 6, {"guard": true}], ["tank", 9, 4], ["heavy", 9, 6], ["mid", 12, 5], ["bird", 13, 3], ["boss", 14, 5]], "reinf": [{"turn": 3, "units": [["fast", 15, 4], ["mid", 15, 6]]}, {"turn": 4, "units": [["air", 3, 0]]}, {"turn": 5, "units": [["heavy", 15, 5]]}]}, {"name": "Hold the Ruins", "goal": "survive", "turns": 8, "max": 7, "elv": [19, 21], "blv": 23, "reward": 1200, "tokens": 2, "map": ["TT,,....^^....TT", "T,,.......,....T", ",...T.......T..,", "....##F..F##....", "..,.#......#.,..", "~~=.F..HH..F.=~~", "..,.#......#.,..", "....##F..F##....", ",...T.......T..,", "T,,.......,....T", "TT,,....^^....TT"], "deploy": [[6, 4], [9, 4], [6, 6], [9, 6], [7, 4], [8, 6], [7, 6]], "army": [["fast", 1, 1], ["bird", 14, 1], ["poison", 1, 9], ["tank", 14, 9], ["mid", 12, 0], ["air", 8, 0], ["boss", 8, 10, {"guard": true}]], "reinf": [{"turn": 2, "units": [["fast", 7, 0], ["heavy", 3, 0]]}, {"turn": 3, "units": [["psy", 7, 10]]}, {"turn": 4, "units": [["air", 0, 5], ["air", 15, 5]]}, {"turn": 5, "units": [["poison", 15, 2]]}, {"turn": 6, "units": [["heavy", 7, 0], ["fast", 8, 10]]}, {"turn": 7, "units": [["ghost", 15, 0]]}]}, {"name": "Seize the Keep", "goal": "seize", "seize": [12, 1], "max": 7, "elv": [22, 24], "blv": 26, "reward": 1300, "tokens": 2, "map": ["^^^^TT,,..######", "^^,,T,,...#FSF.#", "^,,....~~.#...F#", "..T...~~..#.#..#", "......~~........", "..,..~~...,#..F#", ".,,..==....#####", "....~~..T,......", ",,..~~..TT..,,..", "T...==.....H....", "TT..~~......,,TT"], "deploy": [[0, 7], [1, 7], [0, 8], [1, 8], [2, 8], [2, 7], [1, 9]], "army": [["wall", 5, 6, {"guard": true}], ["swim", 6, 4], ["swim", 4, 8], ["heavy", 8, 6], ["bird", 9, 2], ["air", 2, 0], ["psy", 13, 2, {"guard": true}], ["wall", 11, 4, {"guard": true}], ["mid", 14, 4, {"guard": true}], ["poison", 13, 3], ["boss", 12, 1, {"guard": true}]], "reinf": [{"turn": 3, "units": [["fast", 15, 7]]}, {"turn": 4, "units": [["air", 0, 0], ["air", 3, 0]]}, {"turn": 6, "units": [["mid", 15, 9]]}]}, {"name": "The Final Bastion", "goal": "boss", "max": 8, "elv": [25, 27], "blv": 29, "reward": 1600, "tokens": 3, "map": ["TT,,...^^...,,TT", "T,..~~~~~~~~~~.T", ",...~#########~.", "....~#F..#..F#~.", "..H.=...#..S.#~.", "....~#.F......~.", "..H.=...#....#~.", "....~#F..#..F#~.", ",...~#########~.", "T,..~~~~~~~~~~.T", "TT,,...^^...,,TT"], "deploy": [[0, 3], [1, 3], [0, 4], [1, 4], [0, 5], [1, 5], [0, 6], [1, 6]], "army": [["swim", 4, 3], ["swim", 4, 7], ["wall", 5, 4, {"guard": true}], ["wall", 5, 6, {"guard": true}], ["heavy", 7, 5], ["mid", 6, 3], ["psy", 10, 3, {"guard": true}], ["psy", 10, 7, {"guard": true}], ["air", 8, 0], ["air", 7, 10], ["boss", 11, 4, {"guard": true}]], "reinf": [{"turn": 2, "units": [["fast", 15, 3], ["fast", 15, 7]]}, {"turn": 3, "units": [["air", 6, 1]]}, {"turn": 4, "units": [["heavy", 12, 3], ["mid", 12, 7]]}, {"turn": 6, "units": [["air", 15, 0], ["air", 15, 10]]}]}],
+  ...[{"name": "Canyon Ambush", "goal": "rout", "max": 6, "elv": [16, 18], "blv": 20, "reward": 1100, "tokens": 2, "map": ["^^^##TTT..##^^^^", "^,,##T,....#,,^^", ",,..#T..DD.#..,^", "....#..DDDD...,,", "........DD......", "..H.....DDD...H.", "........DD......", "....#..DDDD...,,", ",,..#T..DD.#..,^", "^,,##T,....#,,^^", "^^^##TTT..##^^^^"], "deploy": [[1, 4], [1, 5], [1, 6], [0, 4], [0, 5], [0, 6]], "army": [["psy", 6, 1, {"guard": true}], ["fast", 5, 2, {"guard": true}], ["poison", 6, 9, {"guard": true}], ["air", 13, 0], ["wall", 11, 4, {"guard": true}], ["wall", 11, 6, {"guard": true}], ["tank", 9, 4], ["heavy", 9, 6], ["mid", 12, 5], ["bird", 13, 3], ["boss", 14, 5], ["healer", 14, 4, {"guard": true}]], "reinf": [{"turn": 3, "units": [["fast", 15, 4], ["mid", 15, 6]]}, {"turn": 4, "units": [["air", 3, 0]]}, {"turn": 5, "units": [["heavy", 15, 5]]}]}, {"name": "Hold the Ruins", "goal": "survive", "turns": 8, "max": 7, "elv": [19, 21], "blv": 23, "reward": 1200, "tokens": 2, "map": ["TT,,....^^....TT", "T,,.......,....T", ",...T.......T..,", "....##F..F##....", "..,.#......#.,..", "~~=.F..HH..F.=~~", "..,.#......#.,..", "....##F..F##....", ",...T.......T..,", "T,,.......,....T", "TT,,....^^....TT"], "deploy": [[6, 4], [9, 4], [6, 6], [9, 6], [7, 4], [8, 6], [7, 6]], "army": [["fast", 1, 1], ["bird", 14, 1], ["poison", 1, 9], ["tank", 14, 9], ["mid", 12, 0], ["air", 8, 0], ["boss", 8, 10, {"guard": true}], ["healer", 8, 9, {"guard": true}]], "reinf": [{"turn": 2, "units": [["fast", 7, 0], ["heavy", 3, 0]]}, {"turn": 3, "units": [["psy", 7, 10]]}, {"turn": 4, "units": [["air", 0, 5], ["air", 15, 5]]}, {"turn": 5, "units": [["poison", 15, 2]]}, {"turn": 6, "units": [["heavy", 7, 0], ["fast", 8, 10]]}, {"turn": 7, "units": [["ghost", 15, 0]]}]}, {"name": "Seize the Keep", "goal": "seize", "seize": [12, 1], "max": 7, "elv": [22, 24], "blv": 26, "reward": 1300, "tokens": 2, "map": ["^^^^TT,,..######", "^^,,T,,...#FSF.#", "^,,....~~.#...F#", "..T...~~..#.#..#", "......~~........", "..,..~~...,#..F#", ".,,..==....#####", "....~~..T,......", ",,..~~..TT..,,..", "T...==.....H....", "TT..~~......,,TT"], "deploy": [[0, 7], [1, 7], [0, 8], [1, 8], [2, 8], [2, 7], [1, 9]], "army": [["wall", 5, 6, {"guard": true}], ["swim", 6, 4], ["swim", 4, 8], ["heavy", 8, 6], ["bird", 9, 2], ["air", 2, 0], ["psy", 13, 2, {"guard": true}], ["wall", 11, 4, {"guard": true}], ["mid", 14, 4, {"guard": true}], ["poison", 13, 3], ["boss", 12, 1, {"guard": true}], ["healer", 14, 2, {"guard": true}]], "reinf": [{"turn": 3, "units": [["fast", 15, 7]]}, {"turn": 4, "units": [["air", 0, 0], ["air", 3, 0]]}, {"turn": 6, "units": [["mid", 15, 9]]}]}, {"name": "The Final Bastion", "goal": "boss", "max": 8, "elv": [25, 27], "blv": 29, "reward": 1600, "tokens": 3, "map": ["TT,,...^^...,,TT", "T,..~~~~~~~~~~.T", ",...~#########~.", "....~#F..#..F#~.", "..H.=...#..S.#~.", "....~#.F......~.", "..H.=...#....#~.", "....~#F..#..F#~.", ",...~#########~.", "T,..~~~~~~~~~~.T", "TT,,...^^...,,TT"], "deploy": [[0, 3], [1, 3], [0, 4], [1, 4], [0, 5], [1, 5], [0, 6], [1, 6]], "army": [["swim", 4, 3], ["swim", 4, 7], ["wall", 5, 4, {"guard": true}], ["wall", 5, 6, {"guard": true}], ["heavy", 7, 5], ["mid", 6, 3], ["psy", 10, 3, {"guard": true}], ["psy", 10, 7, {"guard": true}], ["air", 8, 0], ["air", 7, 10], ["boss", 11, 4, {"guard": true}], ["healer", 12, 6, {"guard": true}]], "reinf": [{"turn": 2, "units": [["fast", 15, 3], ["fast", 15, 7]]}, {"turn": 3, "units": [["air", 6, 1]]}, {"turn": 4, "units": [["heavy", 12, 3], ["mid", 12, 7]]}, {"turn": 6, "units": [["air", 15, 0], ["air", 15, 10]]}]}],
 ];
 // Later bosses fight with stronger signature moves.
 const BOSS_MOVES={alakazam:['psychic','confusion','swift'],kingdra:['surf','dragonrage','hydropump'],nidoking:['earthquake','sludgebomb','poisonsting'],machamp:['brickbreak','rockslide','karatechop'],gyarados:['surf','crunch','hydropump'],dragonite:['dragonrage','aerialace','bodyslam','thunderbolt'],
   houndoom:['flamethrower','crunch','bite'],ampharos:['thunderbolt','bodyslam','thundershock'],skarmory:['aerialace','ironhead','peck'],tyranitar:['rockslide','crunch','earthquake']};
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
-const BUILD='2026-11-02 13:50';
+const BUILD='2026-11-02 14:14';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
 const REPLAY_PAY=.3;
@@ -690,15 +703,25 @@ function reachable(u){
   return {best,prev,stops};
 }
 function pathTo(r,u,x,y){const p=[];let k=key(x,y);while(k&&k!==key(u.x,u.y)){p.unshift(k.split(',').map(Number));k=r.prev.get(k);}return p;}
-function usable(u){return u.moves.map((m,i)=>i).filter(i=>u.moves[i].pp>0);}
+const isSupport=k=>{const f=MOVES[k].fx;return f==='heal'||f==='healall'||f==='self';};
+function usable(u){return u.moves.map((m,i)=>i).filter(i=>u.moves[i].pp>0&&!isSupport(u.moves[i].k));}
+function supportMoves(u){return u.moves.map((m,i)=>i).filter(i=>u.moves[i].pp>0&&isSupport(u.moves[i].k));}
+function healAmount(u,mi,t){const M=MOVES[u.moves[mi].k]; if(M.fx==='self') return Math.min(u.maxhp-u.hp,Math.ceil(u.maxhp/2));
+  const base=(M.stat==='spd'?u.spd:u.spa)+M.pow, amt=M.fx==='healall'?Math.round(base/2):base; return Math.min(t.maxhp-t.hp,amt);}
+function healTargets(u,mi,x=u.x,y=u.y){const M=MOVES[u.moves[mi].k];
+  if(M.fx==='self') return u.hp<u.maxhp?[u]:[];
+  if(M.fx==='healall') return units.filter(o=>o.alive&&o.team===u.team&&Math.max(Math.abs(o.x-x),Math.abs(o.y-y))<=2&&o.hp<o.maxhp);
+  return units.filter(o=>o.alive&&o!==u&&o.team===u.team&&o.hp<o.maxhp&&inRange(u.moves[mi],dist(x,y,o.x,o.y)));}
+function healOptions(u){return supportMoves(u).filter(i=>healTargets(u,i).length);}
 function inRange(mv,d){const M=MOVES[mv.k];return d>=M.rng[0]&&d<=M.rng[1];}
 function maxRange(u){return Math.max(0,...usable(u).map(i=>MOVES[u.moves[i].k].rng[1]));}
 function targetsFrom(u,x,y){return units.filter(o=>o.alive&&o.team!==u.team&&usable(u).some(i=>inRange(u.moves[i],dist(x,y,o.x,o.y))));}
 
-// Earthquake: everyone within 1 tile (diagonals too) except fliers, both teams; damage split between them.
-function quakeTargets(a,x=a.x,y=a.y){return units.filter(o=>o.alive&&o!==a&&Math.max(Math.abs(o.x-x),Math.abs(o.y-y))<=1&&!isFly(o));}
+// Earthquake: every ENEMY within 1 tile (diagonals too) except fliers; damage is split between them, but never below AOE_FLOOR of a single hit.
+const AOE_FLOOR=0.5;
+function quakeTargets(a,x=a.x,y=a.y){return units.filter(o=>o.alive&&o.team!==a.team&&Math.max(Math.abs(o.x-x),Math.abs(o.y-y))<=1&&!isFly(o));}
 function quakeInfo(a,mi,x=a.x,y=a.y){const ts=quakeTargets(a,x,y), n=Math.max(1,ts.length);
-  return ts.map(t=>{const c=strikeCalc(a,t,mi,x,y,t.x,t.y);return {t,dmg:Math.ceil(c.dmg/n),hit:c.hit,crit:c.crit,eff:c.eff};});}
+  return ts.map(t=>{const c=strikeCalc(a,t,mi,x,y,t.x,t.y);return {t,dmg:Math.max(Math.ceil(c.dmg/n),Math.ceil(c.dmg*AOE_FLOOR)),full:c.dmg,hit:c.hit,crit:c.crit,eff:c.eff};});}
 function strikeCalc(a,d,mi,ax,ay,dx,dy){
   const mv=a.moves[mi], M=MOVES[mv.k]; const e=eff(M.t,d.sp.ty);
   // Damage: physical/special split only. Type matchup only shifts Hit (like FE's weapon triangle).
@@ -782,7 +805,7 @@ function hintText(){
   return ({prep:'Preparations: click your Pokémon, then a blue tile or ally to swap places · click enemies to see their range',
     select:'Click a Pokémon to move it · click an enemy to see its range',
     move:'Click a blue tile to move · click an enemy to move next to it and attack · Esc to cancel',
-    action:'Choose an action',forecast:'◀ ▶ switch move · ▲ ▼ switch target · Attack to confirm',
+    action:'Choose an action',heal:'◀ ▶ switch heal move · ▲ ▼ switch ally · Heal to confirm',forecast:'◀ ▶ switch move · ▲ ▼ switch target · Attack to confirm',
     items:'Pick a move to equip'})[state]||'';
 }
 let lastHint=null;
@@ -808,6 +831,7 @@ function draw(){
       ctx.strokeStyle='rgba(255,240,140,.9)'; ctx.lineWidth=6; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.beginPath();
       p.forEach(([x,y],i)=>{const X=x*T+T/2,Y=y*T+T/2; i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);}); ctx.stroke(); }
   }
+  if(state==='heal'&&sel){ ctx.fillStyle='rgba(80,230,130,.35)'; for(const o of healTargets(sel,healMove)) ctx.fillRect(o.x*T+1,o.y*T+1,T-2,T-2); if(target) drawReticle(target,'#7dff9e'); }
   if(state==='forecast'&&sel){ ctx.fillStyle='rgba(255,60,60,.35)'; for(const o of targetsFrom(sel,sel.x,sel.y)) ctx.fillRect(o.x*T+1,o.y*T+1,T-2,T-2); if(target) drawReticle(target,'#ffe066'); }
   { const w=pendingWave(turn+(phase==='e'?0:1))||(state==='prep'?pendingWave(2):null);
     if(w&&!over){ const pu=.5+.5*Math.sin(clock/200); ctx.font="700 22px 'Pixelify Sans'"; ctx.textAlign='center';
@@ -1047,8 +1071,19 @@ function planAttack(e){
       } } }
   return best;
 }
+function planHeal(e){
+  const sm=supportMoves(e); if(!sm.length) return null; const r=reachable(e); let best=null;
+  for(const mi of sm){ const M=MOVES[e.moves[mi].k];
+    if(M.fx==='self'){ if(e.hp<e.maxhp*.45){ const v=e.maxhp-e.hp; if(!best||v>best.v) best={v,x:e.x,y:e.y,mi,t:e,r}; } continue; }
+    for(const k of r.stops){ const [x,y]=k.split(',').map(Number); const ox=e.x,oy=e.y; e.x=x; e.y=y;
+      const ts=healTargets(e,mi,x,y).filter(t=>t.hp<t.maxhp*.7); e.x=ox; e.y=oy;
+      for(const t of ts){ const v=(t.maxhp-t.hp)*(t.boss?2:1)+(M.fx==='healall'?ts.length*4:0)-r.best.get(k)*0.1; if(!best||v>best.v) best={v,x,y,mi,t,r}; } } }
+  return best&&best.v>6?best:null;
+}
 async function enemyAct(e){
   if(!e.alive) return;
+  const hp=planHeal(e);
+  if(hp){ await walk(e,pathTo(hp.r,e,hp.x,hp.y)); await doHeal(e,hp.mi,hp.t); e.done=true; return; }
   const plan=planAttack(e);
   if(plan){ e.aggro=true; await walk(e,pathTo(plan.r,e,plan.x,plan.y)); await sleep(150); await fight(e,plan.p,plan.i); }
   else if(!(e.guard||e.boss)||e.aggro){ const r=reachable(e), df=distField(e); let best=null;
@@ -1097,7 +1132,7 @@ function moveRow(u,i,opts={}){
   const mv=u.moves[i], M=MOVES[mv.k]; const e=opts.vs?eff(M.t,opts.vs.sp.ty):1;
   const tag=opts.btn?'button':'div';
   return `<${tag} class="mv ${opts.sel?'sel':''}" ${opts.btn?`data-mi="${i}" ${opts.disabled?'disabled':''}`:''}>
-   <span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${u.equip===i?' <span class="eq">E</span>':''} ${opts.vs?effTag(e):''}${u.sp.ty.includes(M.t)?' <span class="stab">+15 hit (same type)</span>':''}</span><span>${mv.pp}/${M.pp}</span>
+   <span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${u.equip===i?' <span class="eq">E</span>':''} ${opts.vs?effTag(e):''}${u.sp.ty.includes(M.t)&&!isSupport(mv.k)?' <span class="stab">+15 hit (same type)</span>':''}</span><span>${mv.pp}/${M.pp}</span>
    <span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}${opts.note?' · '+opts.note:''}</span></${tag}>`;
 }
 function renderInfo(){
@@ -1119,7 +1154,7 @@ function renderForecast(){
   if(state==='items'&&sel){ hideFcPop(); renderItems(); return; }
   if(state==='prep'){ hideFcPop(); renderPrep(); return; }
   el.style.display='none';
-  if(state==='forecast'&&sel&&target) renderFcPop(); else hideFcPop();
+  if(state==='forecast'&&sel&&target) renderFcPop(); else if(state==='heal'&&sel) renderHealPop(); else hideFcPop();
 }
 function expDmg(info,dbl){return info?info.dmg*(dbl?2:1)*info.hit/100*(1+2*info.crit/100):0;}
 function renderItems(){
@@ -1154,7 +1189,7 @@ function renderFcPop(){
   const cell=(x,dbl)=>x?`${x.dmg}${dbl&&x.dmg>0?'<span style="color:#ffd84a;font-size:14px"> ×2</span>':''}`:'–';
   if(M.fx==='quake'){ const hs=quakeInfo(u,fcMove);
     pop.innerHTML=`<div style="font-weight:700;text-align:center">${u.sp.n} · Earthquake</div>
-      <div class="mvs"><button id="fpL" ${ok.length<2?'disabled':''}>◀</button><div class="mn"><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${u.moves[fcMove].pp}/${M.pp}</span><br><span class="ms">Damage split ${hs.length} ways · no counter</span></div><button id="fpR" ${ok.length<2?'disabled':''}>▶</button></div>
+      <div class="mvs"><button id="fpL" ${ok.length<2?'disabled':''}>◀</button><div class="mn"><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${u.moves[fcMove].pp}/${M.pp}</span><br><span class="ms">Split ${hs.length} way${hs.length>1?'s':''} (min. half each) · no counter</span></div><button id="fpR" ${ok.length<2?'disabled':''}>▶</button></div>
       <table class="itab">${hs.map(h=>`<tr><td class="${h.t.team==='p'?'team-p':'team-e'}">${h.t.sp.n}${h.t.team===u.team?' (ally!)':''}</td><td>${h.dmg} dmg</td><td>${h.hit}%</td><td>HP ${h.t.hp}${h.dmg>=h.t.hp?' <span class="eff2">KO</span>':''}</td></tr>`).join('')}</table>
       <div class="row"><button id="fpBack">Back</button><button id="fpGo" class="primary">⚔ Attack</button></div><div class="keys">◀ ▶ move · Enter attack · Esc back</div>`;
   } else
@@ -1178,6 +1213,36 @@ function sortedTargets(u){ return targetsFrom(u,u.x,u.y).sort((a,b)=>{const ea=e
 function cycleTarget(dir){ if(state!=='forecast') return; const ts=sortedTargets(sel); if(ts.length<2) return; const i=ts.indexOf(target); openForecast(ts[(i+dir+ts.length)%ts.length]); }
 function openForecast(t){ target=t; const ok=fcMoves(sel,t).filter(i=>eff(MOVES[sel.moves[i].k].t,t.sp.ty)!==0);
   fcMove=ok.includes(sel.equip)?sel.equip:(ok.length?bestMoveVs(sel,t):fcMoves(sel,t)[0]); state='forecast'; faceTo(sel,t.x,t.y); hideMenu(); renderForecast(); }
+let healMove=0;
+function startHealing(){ const opts=healOptions(sel); if(!opts.length) return; healMove=opts.includes(sel.equip)?sel.equip:opts[0];
+  const ts=healTargets(sel,healMove).sort((a,b)=>(a.hp/a.maxhp)-(b.hp/b.maxhp)); target=ts[0]; state='heal'; hideMenu(); renderForecast(); }
+function cycleHealMove(dir){ const o=healOptions(sel); const i=o.indexOf(healMove); healMove=o[(i+dir+o.length)%o.length]; const ts=healTargets(sel,healMove); if(!ts.includes(target)) target=ts.sort((a,b)=>(a.hp/a.maxhp)-(b.hp/b.maxhp))[0]; renderForecast(); }
+function cycleHealTarget(dir){ const ts=healTargets(sel,healMove); if(ts.length<2) return; const i=ts.indexOf(target); target=ts[(i+dir+ts.length)%ts.length]; renderForecast(); }
+function renderHealPop(){
+  const pop=document.getElementById('fcpop'), u=sel, M=MOVES[u.moves[healMove].k], o=healOptions(u);
+  const ts=M.fx==='healall'?healTargets(u,healMove):[target];
+  pop.innerHTML=`<div style="font-weight:700;text-align:center;color:#7dff9e">✚ ${u.sp.n} · ${M.n}</div>
+    <div class="mvs"><button id="fpL" ${o.length<2?'disabled':''}>◀</button><div class="mn"><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${u.moves[healMove].pp}/${M.pp}</span><br><span class="ms">${M.d}</span></div><button id="fpR" ${o.length<2?'disabled':''}>▶</button></div>
+    <table class="itab">${ts.map(t=>{const h=healAmount(u,healMove,t);return `<tr><td class="team-p">${t.sp.n}</td><td>HP ${t.hp} → <b class="eff2">${t.hp+h}</b>/${t.maxhp}</td><td class="eff2">+${h}</td></tr>`;}).join('')}
+      ${M.self?`<tr><td class="team-p">${u.sp.n} (self)</td><td>HP ${u.hp} → <b class="eff2">${Math.min(u.maxhp,u.hp+Math.ceil(u.maxhp*M.self))}</b>/${u.maxhp}</td><td></td></tr>`:''}</table>
+    <div class="row"><button id="fpBack">Back</button><button id="fpGo" class="primary" style="background:#2a8a4a;border-color:#7dff9e">✚ Heal</button></div>
+    <div class="keys">◀ ▶ move · ▲ ▼ target · Enter heal · Esc back</div>`;
+  pop.style.display='block'; placeOverlay(pop,(target||u).x,(target||u).y);
+  document.getElementById('fpL').onclick=()=>cycleHealMove(-1); document.getElementById('fpR').onclick=()=>cycleHealMove(1);
+  document.getElementById('fpBack').onclick=cancel; document.getElementById('fpGo').onclick=confirmHeal;
+}
+async function doHeal(u,mi,t){
+  busy=true; hideMenu(); hideFcPop(); const mv=u.moves[mi], M=MOVES[mv.k]; mv.pp--;
+  const ts=M.fx==='healall'?healTargets(u,mi):[t]; const amts=ts.map(x=>healAmount(u,mi,x));
+  if(t&&t!==u) faceTo(u,t.x,t.y); const an=animInfo(u,'Shoot'); setAnim(u,'Shoot',false); floatText(u.x,u.y,M.n,'#7dff9e',15,1000);
+  await sleep(Math.min(600,animLen(an)*.6));
+  ts.forEach((x,i)=>{ x.hp=Math.min(x.maxhp,x.hp+amts[i]); fx.push({kind:'burst',x:x.x*T+T/2,y:x.y*T+T/2,col:'#7dff9e',t:0,dur:600}); floatText(x.x,x.y,'+'+amts[i],'#7dff9e',22,1100); });
+  if(M.self){ const h=Math.min(u.maxhp-u.hp,Math.ceil(u.maxhp*M.self)); if(h>0){ u.hp+=h; floatText(u.x,u.y+0.3,'+'+h,'#7dff9e',16); } }
+  await sleep(700); setAnim(u,'Idle',true);
+  if(u.team==='p'){ const g=amts.some(a=>a>0)?15:3; u.exp+=g; floatText(u.x,u.y-0.2,'+'+g+' EXP','#8cc4ff',14,1000); while(u.exp>=100){ u.exp-=100; await levelUp(u); } }
+  busy=false; renderInfo();
+}
+async function confirmHeal(){ if(busy||state!=='heal') return; const u=sel, mi=healMove, t=target; state='busy'; await doHeal(u,mi,t); afterAction(u); }
 function startTargeting(){ const ts=sortedTargets(sel); if(ts.length) openForecast(ts[0]); }
 // FE-style: clicking an enemy while choosing where to move walks to the best tile in range and opens the forecast.
 function bestStopFor(u,e){ let best=null;
@@ -1199,13 +1264,15 @@ const menu=document.getElementById('menu');
 function showMenu(u){
   const can=targetsFrom(u,u.x,u.y).length>0;
   const C=CHAPTERS[chapter], onThrone=C.goal==='seize'&&u.x===C.seize[0]&&u.y===C.seize[1];
-  menu.innerHTML=`${onThrone?'<button data-a="seize">👑 Seize</button>':''}${can?'<button data-a="attack">⚔ Attack</button>':''}<button data-a="items">Items</button><button data-a="wait">Wait</button><button data-a="cancel">Cancel</button>`;
+  const canHeal=healOptions(u).length>0;
+  menu.innerHTML=`${onThrone?'<button data-a="seize">👑 Seize</button>':''}${can?'<button data-a="attack">⚔ Attack</button>':''}${canHeal?'<button data-a="heal">✚ Heal</button>':''}<button data-a="items">Items</button><button data-a="wait">Wait</button><button data-a="cancel">Cancel</button>`;
   const left=((u.x+1.1)*T/(MW*T))*100, top=(u.y*T/(MH*T))*100;
   menu.style.display='flex'; placeOverlay(menu,u.x,u.y);
   const fb=menu.querySelector('button'); if(fb) fb.classList.add('kf');
   menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{const a=b.dataset.a;
     if(a==='seize'){ hideMenu(); u.done=true; sel=null; state='select'; over=true; floatText(u.x,u.y,'Seized!','#ffe066',26,1500); setTimeout(()=>endChapter(true),700); return; }
     if(a==='attack'){startTargeting();}
+    else if(a==='heal'){startHealing();}
     else if(a==='items'){state='items';itemSel=u.equip;hideMenu();renderForecast();}
     else if(a==='wait'){afterAction(u);}
     else cancel();});
@@ -1237,7 +1304,7 @@ function hidePopup(){popup.style.display='none';}
 function deselect(){sel=null;reach=null;target=null;state='select';hideMenu();renderForecast();}
 function cancel(){
   if(busy) return;
-  if(state==='forecast'){state='action';target=null;renderForecast();showMenu(sel);return;}
+  if(state==='forecast'||state==='heal'){state='action';target=null;renderForecast();showMenu(sel);return;}
   if(state==='items'){state='action';showMenu(sel);renderForecast();return;}
   if(state==='prep'){prepSel=null;inspect=null;renderPrep();return;}
   if(state==='action'){ sel.x=origin.x;sel.y=origin.y;sel.px=origin.x;sel.py=origin.y;sel.dir=origin.dir;hideMenu();reach=reachable(sel);state='move';return;}
@@ -1258,6 +1325,11 @@ async function onTile(x,y){
     if(reach.stops.has(key(x,y))){ busy=true; await walk(sel,pathTo(reach,sel,x,y)); busy=false; state='action'; showMenu(sel); renderInfo(); return; }
     if(u&&u.team==='p'&&!u.done&&u!==sel){ sel=u; origin={x:u.x,y:u.y,dir:u.dir}; reach=reachable(u); return; }
     deselect(); return;
+  }
+  if(state==='heal'){
+    if(u&&u===target) confirmHeal();
+    else if(u&&healTargets(sel,healMove).includes(u)){ target=u; renderForecast(); }
+    return;
   }
   if(state==='forecast'){
     if(u===target) confirmAttack();
@@ -1280,6 +1352,11 @@ document.addEventListener('keydown',ev=>{
   if(screen.style.display==='block'||popup.style.display==='flex'||busy) return;
   const k=ev.key, K=k.toLowerCase(), arrows={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
   const ok=()=>ev.preventDefault();
+  if(state==='heal'){
+    if(k==='ArrowLeft'||K==='q'){cycleHealMove(-1);ok();} else if(k==='ArrowRight'||K==='e'){cycleHealMove(1);ok();}
+    else if(k==='ArrowUp'){cycleHealTarget(-1);ok();} else if(k==='ArrowDown'||k==='Tab'){cycleHealTarget(1);ok();}
+    else if(k==='Enter'||k===' '||K==='z'){confirmHeal();ok();} else if(k==='Escape'||K==='x'){cancel();ok();}
+    return; }
   if(state==='forecast'){
     if(k==='ArrowLeft'||K==='q'){cycleMove(-1);ok();} else if(k==='ArrowRight'||K==='e'){cycleMove(1);ok();}
     else if(k==='ArrowUp'){cycleTarget(-1);ok();} else if(k==='ArrowDown'||k==='Tab'){cycleTarget(1);ok();}
@@ -1353,7 +1430,7 @@ function pull(){
 }
 function isComplete(sk){return !!(save.roster[rkeyOf(sk,false)]&&save.roster[rkeyOf(sk,true)]);}
 function poolLeft(){const P=REGIONS[route.you].pool;return Object.values(P).flat().filter(k=>!isComplete(k)).length;}
-function canLearn(rec,mk){const M=MOVES[mk];return (M.t==='Normal'||SPECIES[rec.sk].ty.includes(M.t))&&!rec.moves.includes(mk);}
+function canLearn(rec,mk){const M=MOVES[mk], tm=TMS.find(t=>t[0]===mk), ty=SPECIES[rec.sk].ty; if(rec.moves.includes(mk)) return false; if(tm&&tm[2]) return ty.some(t=>tm[2].includes(t)); return M.t==='Normal'||ty.includes(M.t);}
 
 // ---------- chapter flow ----------
 async function startChapter(ci,keys){
@@ -1594,7 +1671,7 @@ function showMonCard(sk,shiny,opts={}){
   const r=own||newRec(sk,shiny,recruitLevel());
   const lab={hp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'}, max={hp:50,atk:20,def:20,spa:20,spd:20,spe:20};
   const bars=Object.keys(lab).map(k=>`<div class="sb"><span>${lab[k]}</span><b>${r.st[k]}</b><i><u style="width:${Math.min(100,100*r.st[k]/max[k])}%"></u></i><em title="growth chance per level">${sp.gr[k]||40}%</em></div>`).join('');
-  const mv=r.moves.map(k=>{const M=MOVES[k];return `<div class="mv"><span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${sp.ty.includes(M.t)?' <span class="stab">+15 hit</span>':''}</span><span>${own&&r.equip===r.moves.indexOf(k)?'<span class="eq">E</span> ':''}PP ${M.pp}</span><span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span></div>`;}).join('');
+  const mv=r.moves.map(k=>{const M=MOVES[k];return `<div class="mv"><span><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> ${M.n}${sp.ty.includes(M.t)&&!isSupport(k)?' <span class="stab">+15 hit</span>':''}</span><span>${own&&r.equip===r.moves.indexOf(k)?'<span class="eq">E</span> ':''}PP ${M.pp}</span><span class="meta">${M.c==='P'?'Physical':'Special'} · Pow ${M.pow} · Hit ${M.acc} · Crit ${M.crit} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span></div>`;}).join('');
   const tms=TMS.filter(([k])=>canLearn(r,k)).map(([k])=>`<span class="type" style="background:${TYPE_COL[MOVES[k].t]}">${MOVES[k].n}</span>`).join(' ');
   const traits=[`Move ${sp.mov}`, isFly({sp})?'Flies over all terrain':null, sp.ty.includes('Water')&&!isFly({sp})?'Swims':null, sp.ty.includes('Grass')?'Moves freely in forest':null, (sp.ty.includes('Rock')||sp.ty.includes('Ground'))?'Climbs mountains':null].filter(Boolean).join(' · ');
   const status=own?`<span class="eff2">In your team · Lv ${r.lv} · EXP ${r.exp||0}/100</span>`:`Joins at <b>Lv ${r.lv}</b> (next chapter's enemy level)`;
@@ -1625,8 +1702,8 @@ function showShop(tm=null,key=null){
       body=`<h3>${SPECIES[r.sk].n} already knows 4 moves. Forget which one for ${M.n}?</h3><div class="mvlist" style="max-width:420px">${r.moves.map((k,i)=>`<button class="mv" data-f="${i}"><span>${MOVES[k].n}</span><span>${MOVES[k].t}</span></button>`).join('')}</div>`; }
     body+=`<div class="row" style="max-width:240px"><button id="bk">Back</button></div>`;
   }
-  const list=TMS.map(([k,c])=>{const M=MOVES[k];return `<button class="tm ${tm===k?'sel':''}" data-tm="${k}" ${save.tokens<c?'disabled':''}><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${M.n}</b> <span class="ms">${M.c==='P'?'Phys':'Spec'} · Pow ${M.pow} · Hit ${M.acc} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}</span><span class="cost">${c} tok</span></button>`;}).join('');
-  showScreen(`${topBar()}<h2>TM Shop</h2><p class="note">Spend TM tokens to teach a move (up to 4 per Pokémon). Earn tokens from repeat recruits, first-time chapter clears and replays.</p>
+  const list=TMS.map(([k,c,tys])=>{const M=MOVES[k];return `<button class="tm ${tm===k?'sel':''}" data-tm="${k}" ${save.tokens<c?'disabled':''}><span class="type" style="background:${TYPE_COL[M.t]}">${M.t}</span> <b>${isSupport(k)?'✚ ':''}${M.n}</b> <span class="ms">${isSupport(k)?(M.d||''):`${M.c==='P'?'Phys':'Spec'} · Pow ${M.pow} · Hit ${M.acc} · Rng ${M.rng[0]===M.rng[1]?M.rng[0]:M.rng[0]+'–'+M.rng[1]}${M.d?' · '+M.d:''}`}${tys?` · learnable by ${tys.join('/')} types`:''}</span><span class="cost">${c} tok</span></button>`;}).join('');
+  showScreen(`${topBar()}<h2>TM Shop</h2><p class="note">Spend TM tokens to teach a move (up to 4 per Pokémon). ✚ moves heal instead of attacking. Earn tokens from repeat recruits, first-time chapter clears and replays.</p>
     ${tm?body:`<div class="tms">${list}</div>`}`);
   bindTabs();
   screen.querySelectorAll('[data-tm]').forEach(b=>b.onclick=()=>showShop(b.dataset.tm));
