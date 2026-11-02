@@ -4,9 +4,10 @@ from PIL import Image
 src, out = sys.argv[1], sys.argv[2]
 os.makedirs(out, exist_ok=True)
 BOSS = "0095 0059 0143 0214 0217 0208".split()
+EVO = open(os.path.join(os.path.dirname(__file__), "evo_ids.txt")).read().split() if os.path.exists(os.path.join(os.path.dirname(__file__), "evo_ids.txt")) else []
 POOL = ("0001 0004 0007 0025 0074 0058 0060 0019 0016 0066 0152 0155 0158 0179 0161 0163 0194 0167 0185 0133 0043 0175 0183 0209 "
         + open(os.path.join(os.path.dirname(__file__), "ids.txt")).read()).split()
-NORMAL = sorted(set(POOL + BOSS)); SHINY = sorted(set(POOL))
+NORMAL = sorted(set(POOL + BOSS + EVO)); SHINY = sorted(set(POOL + EVO))
 WANT = ["Idle", "Walk", "Attack", "Hurt", "Shoot"]
 EMOS = ["Normal", "Pain", "Happy"]
 

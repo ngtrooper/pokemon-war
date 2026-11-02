@@ -12,6 +12,8 @@ A Fire Emblem–style tactics game with Pokémon Mystery Dungeon sprites. Combat
 - 71 Kanto and 48 Johto basic Pokémon to recruit (stats generated from official base stats via `@pkmn/dex`)
 - Recruit gacha: ₽300 a pull; pseudo-legendary 1% (Dratini, Larvitar), rare 9%, uncommon 35%, common 55%; 5% shiny; 3-repeat shiny meter; rare guaranteed every 10 pulls; extra copies become TM tokens
 - TM shop to teach moves (up to 4 per Pokémon)
+- Evolution for every Gen 1–2 family (levels scaled to the campaign), branching choices (Eevee, Poliwhirl, Gloom, Slowpoke, Tyrogue), classic evolution animation
+- Fire Emblem–style controls: click an enemy to move-and-attack, on-map battle forecast, keyboard cursor, battle preparations
 - No permadeath; progress saves in your browser
 - **Tester tools** on the chapter screen: money, tokens, levels, unlock chapters, add Pokémon
 
@@ -21,6 +23,7 @@ Note which route/starter you used, the chapter, and anything that felt unfair, t
 ## Development
 - `src/index.src.html` is the source; `python3 tools/build.py` writes `index.html`.
 - `tools/gen.js` + `tools/mk.js` (needs `npm i @pkmn/dex`) regenerate the basic-Pokémon roster into `AUTO_SPECIES`.
+- `tools/evo.js` regenerates evolution data (`EVOS`, `EVO_SPECIES`, `BASE_ST`).
 - `tools/build_atlas.py <SpriteCollab checkout> atlas` rebuilds sprite atlases (one per Pokémon, loaded on demand) and the shared portrait sheet.
 
 ## Credits
