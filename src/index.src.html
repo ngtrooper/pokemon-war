@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pokémon War — Prototype</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://www.youtube-nocookie.com"><link rel="preconnect" href="https://i.ytimg.com">
+<script id="ytapi" src="https://www.youtube.com/iframe_api" async></script>
 <link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -1041,7 +1043,7 @@ function monCard(r,key,opts={}){
 // ---------- title video ----------
 // Uses the YouTube player API so the video stays invisible until it is actually playing:
 // no play button, no loading spinner. Edges are cropped (scale 1.3) to hide the title bar and logo.
-let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=4500;
+let titlePlayer=null, titleSound=false, titleLoop=0; const TITLE_WARMUP=3000;
 function showTitleThumb(){
   const el=document.querySelector('.titlebg .thumb'); if(!el) return;
   const set=u=>{el.style.backgroundImage=`url(${u})`; el.classList.add('on');};
@@ -1069,7 +1071,7 @@ function startTitleVideo(){
         setTimeout(()=>{ if(!box.dataset.warm){ box.dataset.warm='1'; box.classList.add('on'); } },TITLE_WARMUP+1500); } }catch(err){} },300);
   };
   if(window.YT&&YT.Player) make();
-  else { window.onYouTubeIframeAPIReady=make;
+  else { window.onYouTubeIframeAPIReady=()=>{ if(document.getElementById('ytbg')&&!titlePlayer) make(); };
     if(!document.getElementById('ytapi')){ const sc=document.createElement('script'); sc.id='ytapi'; sc.src='https://www.youtube.com/iframe_api'; document.head.appendChild(sc); } }
 }
 // Some browsers block autoplay until the first tap; nudge the video on any interaction.
