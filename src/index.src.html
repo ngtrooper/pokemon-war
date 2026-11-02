@@ -1065,7 +1065,8 @@ function startTitleVideo(){
     // Loop: just before the end, crossfade back to the thumbnail, restart hidden, fade in once controls are gone.
     clearInterval(titleLoop); titleLoop=setInterval(()=>{ try{ const box=document.querySelector('.titlebg .yt'); if(!box){clearInterval(titleLoop);return;}
       const d=titlePlayer.getDuration(), t=titlePlayer.getCurrentTime();
-      if(d&&t>d-1.5&&box.dataset.warm){ box.classList.remove('on'); box.dataset.warm=''; setTimeout(()=>{ try{ titlePlayer.seekTo(0,true); titlePlayer.playVideo(); }catch(err){} },700); } }catch(err){} },300);
+      if(d&&t>d-1.5&&box.dataset.warm){ box.classList.remove('on'); box.dataset.warm=''; setTimeout(()=>{ try{ titlePlayer.seekTo(0,true); titlePlayer.playVideo(); }catch(err){} },700);
+        setTimeout(()=>{ if(!box.dataset.warm){ box.dataset.warm='1'; box.classList.add('on'); } },TITLE_WARMUP+1500); } }catch(err){} },300);
   };
   if(window.YT&&YT.Player) make();
   else { window.onYouTubeIframeAPIReady=make;

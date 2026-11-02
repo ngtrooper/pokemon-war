@@ -448,7 +448,7 @@ const CHAPTERS = [
    army:[['swim',7,3],['swim',8,7],['bird',9,1],['bird',9,9],['fast',10,4],['fast',10,6],['mid',13,2,{guard:true}],['poison',13,8,{guard:true}],['tank',12,4,{guard:true}],['heavy',12,6,{guard:true}],['boss',13,5]]},
 ];
 const PLAYER_BOOST={hp:5,atk:1,def:2,spa:1,spd:2,spe:1};
-const BUILD='2026-11-01 23:56';
+const BUILD='2026-11-01 23:57';
 const TITLE_VIDEO='Z3cSdsdDx-Y';
 const TIER_RATES={legendary:.01,rare:.09,uncommon:.35,common:.55};
 const REPLAY_PAY=.3;
@@ -1065,7 +1065,8 @@ function startTitleVideo(){
     // Loop: just before the end, crossfade back to the thumbnail, restart hidden, fade in once controls are gone.
     clearInterval(titleLoop); titleLoop=setInterval(()=>{ try{ const box=document.querySelector('.titlebg .yt'); if(!box){clearInterval(titleLoop);return;}
       const d=titlePlayer.getDuration(), t=titlePlayer.getCurrentTime();
-      if(d&&t>d-1.5&&box.dataset.warm){ box.classList.remove('on'); box.dataset.warm=''; setTimeout(()=>{ try{ titlePlayer.seekTo(0,true); titlePlayer.playVideo(); }catch(err){} },700); } }catch(err){} },300);
+      if(d&&t>d-1.5&&box.dataset.warm){ box.classList.remove('on'); box.dataset.warm=''; setTimeout(()=>{ try{ titlePlayer.seekTo(0,true); titlePlayer.playVideo(); }catch(err){} },700);
+        setTimeout(()=>{ if(!box.dataset.warm){ box.dataset.warm='1'; box.classList.add('on'); } },TITLE_WARMUP+1500); } }catch(err){} },300);
   };
   if(window.YT&&YT.Player) make();
   else { window.onYouTubeIframeAPIReady=make;
