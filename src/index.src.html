@@ -108,9 +108,12 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 .res.sh{box-shadow:0 0 18px #ffd84a88;background:linear-gradient(160deg,#3a3418,var(--panel))}
 @keyframes flip{from{opacity:0;transform:rotateY(90deg) scale(.8)}to{opacity:1;transform:none}}
 .pools{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
-.pool{display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid #33406e;border-radius:8px;padding:4px 8px;font-size:14px}.pool img{width:32px;height:32px;image-rendering:pixelated}.pool.dim{opacity:.45}.pm{color:var(--edge)}
+.pool{display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid #33406e;border-radius:8px;padding:4px 8px;font-size:14px}.pool img{width:32px;height:32px;image-rendering:pixelated}.pool.dim{opacity:.45}.pm{color:var(--edge)}
 .tms{display:flex;flex-direction:column;gap:6px;max-width:760px;margin:0 auto}
 .tm{display:flex;align-items:center;gap:8px;text-align:left;flex-wrap:wrap}.tm .cost{margin-left:auto;color:#9fd0ff;font-weight:600}.tm.sel{border-color:var(--edge)}
+/* portraits come from one shared sheet; zoom scales the 40px tiles */
+.pt{display:inline-block;width:40px;height:40px;background-image:url(atlas/ports.png);background-repeat:no-repeat;image-rendering:pixelated;flex:none;border-radius:3px}
+.pt.portrait{zoom:2;border:1px solid #44528a;background-color:#0b1020}.pt.mp{zoom:1.6}.pt.p80{zoom:2}.pt.p48{zoom:1.2}.pt.p32{zoom:.8}.pt.p40{zoom:1}
 footer{margin-top:10px;color:var(--mute);font-size:13px;line-height:1.5}
 footer b{color:var(--ink);font-weight:600}
 @media (max-width:860px){#main{flex-direction:column}aside{width:100%}}
@@ -152,7 +155,7 @@ footer b{color:var(--ink);font-weight:600}
 </div>
 <script>
 'use strict';
-const ATLAS = /*ATLAS*/null;
+const ATLASDATA = /*ATLAS*/null, ATLAS = ATLASDATA.atlas, PORTS = ATLASDATA.ports;
 const T = 48, S = 2, MW = 16, MH = 11;
 let SPEED = 1;
 
@@ -238,6 +241,10 @@ const MOVES = {
   crunch:      {n:'Crunch',       t:'Dark',    c:'P',pow:10,acc:95,crit:10,rng:[1,1],pp:15},
   dazzlinggleam:{n:'Dazzling Gleam',t:'Fairy', c:'S',pow:9,acc:100,crit:0, rng:[1,2],pp:10},
   bodyslam:    {n:'Body Slam',    t:'Normal',  c:'P',pow:10,acc:95,crit:0, rng:[1,1],pp:15},
+  lick:        {n:'Lick',         t:'Ghost',   c:'P',pow:6,acc:100,crit:0, rng:[1,1],pp:30},
+  powdersnow:  {n:'Powder Snow',  t:'Ice',     c:'S',pow:6,acc:100,crit:0, rng:[1,2],pp:25},
+  dragonrage:  {n:'Dragon Rage',  t:'Dragon',  c:'S',pow:7,acc:100,crit:0, rng:[1,2],pp:15},
+  splash:      {n:'Splash',       t:'Normal',  c:'P',pow:0,acc:100,crit:0, rng:[1,1],pp:40,d:'…nothing happens'},
   hydropump:   {n:'Hydro Pump',   t:'Water',   c:'S',pow:9,acc:75, crit:0, rng:[2,3],pp:5, d:'Long range (2–3), can’t hit adjacent'},
 };
 // Learnable TMs: a Pokémon can learn a TM if it shares the move's type, or if the TM is Normal-type.
@@ -282,16 +289,116 @@ const SPECIES = {
   ursaring:  {id:'0217',n:'Ursaring',  ty:['Normal'],       mov:5,st:{hp:38,atk:14,def:8,spa:6,spd:7,spe:6}, gr:G0,mv:['bodyslam','crunch']},
   steelix:   {id:'0208',n:'Steelix',   ty:['Steel','Ground'],mov:4,st:{hp:44,atk:13,def:15,spa:5,spd:6,spe:4},gr:G0,mv:['ironhead','dig']},
 };
+// Auto-generated from Pokémon Showdown base stats (@pkmn/dex): stats = base/8 (HP 10 + base×0.22), growth from base.
+const AUTO_SPECIES = {
+  caterpie:{"id":"0010","n":"Caterpie","ty":["Bug"],"mov":5,"st":{"hp":20,"atk":4,"def":4,"spa":3,"spd":3,"spe":6},"gr":{"hp":53,"atk":32,"def":34,"spa":26,"spd":26,"spe":40},"mv":["tackle","bugbite"]},
+  weedle:{"id":"0013","n":"Weedle","ty":["Bug","Poison"],"mov":5,"st":{"hp":19,"atk":4,"def":4,"spa":3,"spd":3,"spe":6},"gr":{"hp":50,"atk":34,"def":32,"spa":26,"spd":26,"spe":43},"mv":["bugbite","poisonsting"]},
+  spearow:{"id":"0021","n":"Spearow","ty":["Normal","Flying"],"mov":5,"st":{"hp":19,"atk":8,"def":4,"spa":4,"spd":4,"spe":9},"gr":{"hp":50,"atk":48,"def":32,"spa":32,"spd":32,"spe":54},"mv":["tackle","peck"],"fly":true},
+  ekans:{"id":"0023","n":"Ekans","ty":["Poison"],"mov":5,"st":{"hp":18,"atk":8,"def":6,"spa":5,"spd":7,"spe":7},"gr":{"hp":48,"atk":48,"def":39,"spa":37,"spd":45,"spe":45},"mv":["tackle","poisonsting"]},
+  sandshrew:{"id":"0027","n":"Sandshrew","ty":["Ground"],"mov":4,"st":{"hp":21,"atk":9,"def":11,"spa":3,"spd":4,"spe":5},"gr":{"hp":55,"atk":56,"def":62,"spa":26,"spd":32,"spe":37},"mv":["tackle","mudslap"]},
+  nidoranf:{"id":"0029","n":"Nidoran♀","ty":["Poison"],"mov":5,"st":{"hp":22,"atk":6,"def":7,"spa":5,"spd":5,"spe":5},"gr":{"hp":58,"atk":41,"def":44,"spa":37,"spd":37,"spe":38},"mv":["tackle","poisonsting"]},
+  nidoranm:{"id":"0032","n":"Nidoran♂","ty":["Poison"],"mov":5,"st":{"hp":20,"atk":7,"def":5,"spa":5,"spd":5,"spe":6},"gr":{"hp":53,"atk":46,"def":37,"spa":37,"spd":37,"spe":43},"mv":["tackle","poisonsting"]},
+  clefairy:{"id":"0035","n":"Clefairy","ty":["Fairy"],"mov":4,"st":{"hp":25,"atk":6,"def":6,"spa":8,"spd":8,"spe":4},"gr":{"hp":65,"atk":40,"def":41,"spa":48,"spd":51,"spe":34},"mv":["pound","fairywind"]},
+  vulpix:{"id":"0037","n":"Vulpix","ty":["Fire"],"mov":5,"st":{"hp":18,"atk":5,"def":5,"spa":6,"spd":8,"spe":8},"gr":{"hp":49,"atk":38,"def":37,"spa":43,"spd":51,"spe":51},"mv":["pound","ember"]},
+  jigglypuff:{"id":"0039","n":"Jigglypuff","ty":["Normal","Fairy"],"mov":4,"st":{"hp":35,"atk":6,"def":3,"spa":6,"spd":3,"spe":3},"gr":{"hp":88,"atk":40,"def":26,"spa":40,"spd":29,"spe":26},"mv":["tackle","playrough"]},
+  zubat:{"id":"0041","n":"Zubat","ty":["Poison","Flying"],"mov":5,"st":{"hp":19,"atk":6,"def":4,"spa":4,"spd":5,"spe":7},"gr":{"hp":50,"atk":40,"def":34,"spa":32,"spd":37,"spe":45},"mv":["poisonsting","peck"],"fly":true},
+  paras:{"id":"0046","n":"Paras","ty":["Bug","Grass"],"mov":4,"st":{"hp":18,"atk":9,"def":7,"spa":6,"spd":7,"spe":3},"gr":{"hp":48,"atk":54,"def":45,"spa":40,"spd":45,"spe":29},"mv":["bugbite","vinewhip"]},
+  venonat:{"id":"0048","n":"Venonat","ty":["Bug","Poison"],"mov":5,"st":{"hp":23,"atk":7,"def":6,"spa":5,"spd":7,"spe":6},"gr":{"hp":60,"atk":45,"def":43,"spa":37,"spd":45,"spe":40},"mv":["bugbite","poisonsting"]},
+  diglett:{"id":"0050","n":"Diglett","ty":["Ground"],"mov":6,"st":{"hp":12,"atk":7,"def":3,"spa":4,"spd":6,"spe":12},"gr":{"hp":35,"atk":45,"def":29,"spa":34,"spd":40,"spe":67},"mv":["tackle","mudslap"]},
+  meowth:{"id":"0052","n":"Meowth","ty":["Normal"],"mov":6,"st":{"hp":19,"atk":6,"def":4,"spa":5,"spd":5,"spe":11},"gr":{"hp":50,"atk":40,"def":34,"spa":37,"spd":37,"spe":65},"mv":["tackle","quickattack"]},
+  psyduck:{"id":"0054","n":"Psyduck","ty":["Water"],"mov":5,"st":{"hp":21,"atk":7,"def":6,"spa":8,"spd":6,"spe":7},"gr":{"hp":55,"atk":44,"def":41,"spa":51,"spd":43,"spe":45},"mv":["pound","watergun"]},
+  mankey:{"id":"0056","n":"Mankey","ty":["Fighting"],"mov":5,"st":{"hp":19,"atk":10,"def":4,"spa":4,"spd":6,"spe":9},"gr":{"hp":50,"atk":59,"def":34,"spa":34,"spd":40,"spe":54},"mv":["tackle","lowkick"]},
+  abra:{"id":"0063","n":"Abra","ty":["Psychic"],"mov":6,"st":{"hp":16,"atk":3,"def":2,"spa":13,"spd":7,"spe":11},"gr":{"hp":43,"atk":26,"def":23,"spa":73,"spd":45,"spe":65},"mv":["pound","confusion"]},
+  bellsprout:{"id":"0069","n":"Bellsprout","ty":["Grass","Poison"],"mov":4,"st":{"hp":21,"atk":9,"def":4,"spa":9,"spd":4,"spe":5},"gr":{"hp":55,"atk":56,"def":34,"spa":54,"spd":32,"spe":37},"mv":["vinewhip","poisonsting"]},
+  tentacool:{"id":"0072","n":"Tentacool","ty":["Water","Poison"],"mov":5,"st":{"hp":19,"atk":5,"def":4,"spa":6,"spd":13,"spe":9},"gr":{"hp":50,"atk":37,"def":34,"spa":43,"spd":70,"spe":54},"mv":["watergun","acid"]},
+  ponyta:{"id":"0077","n":"Ponyta","ty":["Fire"],"mov":6,"st":{"hp":21,"atk":11,"def":7,"spa":8,"spd":8,"spe":11},"gr":{"hp":55,"atk":62,"def":45,"spa":51,"spd":51,"spe":65},"mv":["tackle","flamewheel"]},
+  slowpoke:{"id":"0079","n":"Slowpoke","ty":["Water","Psychic"],"mov":4,"st":{"hp":30,"atk":8,"def":8,"spa":5,"spd":5,"spe":2},"gr":{"hp":75,"atk":51,"def":51,"spa":37,"spd":37,"spe":23},"mv":["watergun","confusion"]},
+  magnemite:{"id":"0081","n":"Magnemite","ty":["Electric","Steel"],"mov":5,"st":{"hp":16,"atk":4,"def":9,"spa":12,"spd":7,"spe":6},"gr":{"hp":43,"atk":34,"def":54,"spa":67,"spd":45,"spe":40},"mv":["thundershock","metalclaw"]},
+  farfetchd:{"id":"0083","n":"Farfetch’d","ty":["Normal","Flying"],"mov":5,"st":{"hp":21,"atk":11,"def":7,"spa":7,"spd":8,"spe":8},"gr":{"hp":56,"atk":65,"def":45,"spa":47,"spd":49,"spe":48},"mv":["tackle","peck"],"fly":true},
+  doduo:{"id":"0084","n":"Doduo","ty":["Normal","Flying"],"mov":5,"st":{"hp":18,"atk":11,"def":6,"spa":4,"spd":4,"spe":9},"gr":{"hp":48,"atk":62,"def":40,"spa":34,"spd":34,"spe":56},"mv":["tackle","peck"],"fly":true},
+  seel:{"id":"0086","n":"Seel","ty":["Water"],"mov":5,"st":{"hp":24,"atk":6,"def":7,"spa":6,"spd":9,"spe":6},"gr":{"hp":63,"atk":40,"def":45,"spa":40,"spd":54,"spe":40},"mv":["tackle","watergun"]},
+  grimer:{"id":"0088","n":"Grimer","ty":["Poison"],"mov":4,"st":{"hp":28,"atk":10,"def":6,"spa":5,"spd":6,"spe":3},"gr":{"hp":70,"atk":59,"def":43,"spa":37,"spd":43,"spe":29},"mv":["tackle","poisonsting"]},
+  shellder:{"id":"0090","n":"Shellder","ty":["Water"],"mov":4,"st":{"hp":17,"atk":8,"def":13,"spa":6,"spd":3,"spe":5},"gr":{"hp":45,"atk":51,"def":70,"spa":40,"spd":29,"spe":37},"mv":["tackle","watergun"]},
+  gastly:{"id":"0092","n":"Gastly","ty":["Ghost","Poison"],"mov":5,"st":{"hp":17,"atk":4,"def":4,"spa":13,"spd":4,"spe":10},"gr":{"hp":45,"atk":34,"def":32,"spa":70,"spd":34,"spe":59},"mv":["lick","acid"],"fly":true},
+  drowzee:{"id":"0096","n":"Drowzee","ty":["Psychic"],"mov":5,"st":{"hp":23,"atk":6,"def":6,"spa":5,"spd":11,"spe":5},"gr":{"hp":60,"atk":41,"def":40,"spa":39,"spd":65,"spe":38},"mv":["tackle","confusion"]},
+  krabby:{"id":"0098","n":"Krabby","ty":["Water"],"mov":5,"st":{"hp":17,"atk":13,"def":11,"spa":3,"spd":3,"spe":6},"gr":{"hp":45,"atk":73,"def":65,"spa":29,"spd":29,"spe":43},"mv":["tackle","watergun"]},
+  voltorb:{"id":"0100","n":"Voltorb","ty":["Electric"],"mov":6,"st":{"hp":19,"atk":4,"def":6,"spa":7,"spd":7,"spe":13},"gr":{"hp":50,"atk":32,"def":43,"spa":45,"spd":45,"spe":70},"mv":["pound","thundershock"]},
+  exeggcute:{"id":"0102","n":"Exeggcute","ty":["Grass","Psychic"],"mov":4,"st":{"hp":23,"atk":5,"def":10,"spa":8,"spd":6,"spe":5},"gr":{"hp":60,"atk":37,"def":59,"spa":48,"spd":40,"spe":37},"mv":["absorb","confusion"]},
+  cubone:{"id":"0104","n":"Cubone","ty":["Ground"],"mov":4,"st":{"hp":21,"atk":6,"def":12,"spa":5,"spd":6,"spe":4},"gr":{"hp":55,"atk":43,"def":67,"spa":37,"spd":43,"spe":34},"mv":["tackle","mudslap"]},
+  hitmonlee:{"id":"0106","n":"Hitmonlee","ty":["Fighting"],"mov":5,"st":{"hp":18,"atk":12,"def":6,"spa":3,"spd":11,"spe":9},"gr":{"hp":55,"atk":81,"def":44,"spa":34,"spd":76,"spe":63},"mv":["tackle","lowkick"]},
+  hitmonchan:{"id":"0107","n":"Hitmonchan","ty":["Fighting"],"mov":5,"st":{"hp":18,"atk":10,"def":8,"spa":3,"spd":11,"spe":8},"gr":{"hp":55,"atk":73,"def":58,"spa":34,"spd":76,"spe":57},"mv":["tackle","lowkick"]},
+  lickitung:{"id":"0108","n":"Lickitung","ty":["Normal"],"mov":4,"st":{"hp":30,"atk":7,"def":9,"spa":8,"spd":9,"spe":4},"gr":{"hp":75,"atk":45,"def":56,"spa":48,"spd":56,"spe":32},"mv":["tackle","bite"]},
+  koffing:{"id":"0109","n":"Koffing","ty":["Poison"],"mov":4,"st":{"hp":19,"atk":8,"def":12,"spa":8,"spd":6,"spe":4},"gr":{"hp":50,"atk":51,"def":67,"spa":48,"spd":40,"spe":34},"mv":["tackle","poisonsting"],"fly":true},
+  rhyhorn:{"id":"0111","n":"Rhyhorn","ty":["Ground","Rock"],"mov":4,"st":{"hp":28,"atk":11,"def":12,"spa":4,"spd":4,"spe":3},"gr":{"hp":70,"atk":62,"def":67,"spa":32,"spd":32,"spe":29},"mv":["mudslap","rockthrow"]},
+  chansey:{"id":"0113","n":"Chansey","ty":["Normal"],"mov":5,"st":{"hp":39,"atk":1,"def":1,"spa":4,"spd":13,"spe":6},"gr":{"hp":90,"atk":18,"def":18,"spa":34,"spd":73,"spe":43},"mv":["tackle","bite"]},
+  tangela:{"id":"0114","n":"Tangela","ty":["Grass"],"mov":5,"st":{"hp":24,"atk":7,"def":14,"spa":13,"spd":5,"spe":8},"gr":{"hp":63,"atk":45,"def":78,"spa":70,"spd":37,"spe":48},"mv":["pound","absorb"]},
+  kangaskhan:{"id":"0115","n":"Kangaskhan","ty":["Normal"],"mov":6,"st":{"hp":28,"atk":10,"def":8,"spa":4,"spd":8,"spe":9},"gr":{"hp":83,"atk":67,"def":59,"spa":37,"spd":59,"spe":65},"mv":["tackle","quickattack"]},
+  horsea:{"id":"0116","n":"Horsea","ty":["Water"],"mov":5,"st":{"hp":17,"atk":5,"def":9,"spa":9,"spd":3,"spe":8},"gr":{"hp":45,"atk":37,"def":54,"spa":54,"spd":29,"spe":48},"mv":["pound","watergun"]},
+  goldeen:{"id":"0118","n":"Goldeen","ty":["Water"],"mov":5,"st":{"hp":20,"atk":8,"def":8,"spa":4,"spd":6,"spe":8},"gr":{"hp":53,"atk":52,"def":48,"spa":34,"spd":43,"spe":50},"mv":["tackle","watergun"]},
+  staryu:{"id":"0120","n":"Staryu","ty":["Water"],"mov":5,"st":{"hp":17,"atk":6,"def":7,"spa":9,"spd":7,"spe":11},"gr":{"hp":45,"atk":40,"def":45,"spa":54,"spd":45,"spe":62},"mv":["pound","watergun"]},
+  mrmime:{"id":"0122","n":"Mr. Mime","ty":["Psychic","Fairy"],"mov":6,"st":{"hp":16,"atk":5,"def":6,"spa":10,"spd":12,"spe":9},"gr":{"hp":50,"atk":40,"def":51,"spa":70,"spd":81,"spe":65},"mv":["confusion","fairywind"]},
+  scyther:{"id":"0123","n":"Scyther","ty":["Bug","Flying"],"mov":6,"st":{"hp":25,"atk":14,"def":10,"spa":7,"spd":10,"spe":13},"gr":{"hp":65,"atk":76,"def":59,"spa":45,"spd":59,"spe":73},"mv":["bugbite","peck"],"fly":true},
+  jynx:{"id":"0124","n":"Jynx","ty":["Ice","Psychic"],"mov":6,"st":{"hp":20,"atk":5,"def":3,"spa":11,"spd":10,"spe":10},"gr":{"hp":63,"atk":43,"def":34,"spa":78,"spd":67,"spe":67},"mv":["powdersnow","confusion"]},
+  electabuzz:{"id":"0125","n":"Electabuzz","ty":["Electric"],"mov":6,"st":{"hp":24,"atk":10,"def":7,"spa":12,"spd":11,"spe":13},"gr":{"hp":63,"atk":61,"def":46,"spa":67,"spd":62,"spe":73},"mv":["pound","thundershock"]},
+  magmar:{"id":"0126","n":"Magmar","ty":["Fire"],"mov":6,"st":{"hp":24,"atk":12,"def":7,"spa":13,"spd":11,"spe":12},"gr":{"hp":63,"atk":67,"def":46,"spa":70,"spd":62,"spe":66},"mv":["pound","ember"]},
+  pinsir:{"id":"0127","n":"Pinsir","ty":["Bug"],"mov":5,"st":{"hp":20,"atk":13,"def":10,"spa":6,"spd":7,"spe":9},"gr":{"hp":63,"atk":84,"def":70,"spa":45,"spd":54,"spe":62},"mv":["tackle","bugbite"]},
+  tauros:{"id":"0128","n":"Tauros","ty":["Normal"],"mov":6,"st":{"hp":23,"atk":10,"def":10,"spa":4,"spd":7,"spe":11},"gr":{"hp":68,"atk":70,"def":67,"spa":37,"spd":54,"spe":76},"mv":["tackle","quickattack"]},
+  magikarp:{"id":"0129","n":"Magikarp","ty":["Water"],"mov":5,"st":{"hp":14,"atk":1,"def":7,"spa":2,"spd":3,"spe":10},"gr":{"hp":40,"atk":21,"def":45,"spa":23,"spd":26,"spe":59},"mv":["splash","tackle"]},
+  lapras:{"id":"0131","n":"Lapras","ty":["Water","Ice"],"mov":5,"st":{"hp":33,"atk":9,"def":8,"spa":9,"spd":10,"spe":6},"gr":{"hp":90,"atk":62,"def":59,"spa":62,"spd":67,"spe":48},"mv":["watergun","powdersnow"]},
+  porygon:{"id":"0137","n":"Porygon","ty":["Normal"],"mov":4,"st":{"hp":24,"atk":8,"def":9,"spa":11,"spd":9,"spe":5},"gr":{"hp":63,"atk":48,"def":54,"spa":62,"spd":56,"spe":37},"mv":["tackle","bite"]},
+  omanyte:{"id":"0138","n":"Omanyte","ty":["Rock","Water"],"mov":4,"st":{"hp":18,"atk":5,"def":13,"spa":11,"spd":7,"spe":4},"gr":{"hp":48,"atk":37,"def":70,"spa":65,"spd":45,"spe":34},"mv":["rockthrow","watergun"]},
+  kabuto:{"id":"0140","n":"Kabuto","ty":["Rock","Water"],"mov":5,"st":{"hp":17,"atk":10,"def":11,"spa":7,"spd":6,"spe":7},"gr":{"hp":45,"atk":59,"def":65,"spa":45,"spd":40,"spe":45},"mv":["rockthrow","watergun"]},
+  aerodactyl:{"id":"0142","n":"Aerodactyl","ty":["Rock","Flying"],"mov":6,"st":{"hp":24,"atk":10,"def":6,"spa":6,"spd":7,"spe":13},"gr":{"hp":70,"atk":73,"def":51,"spa":48,"spd":56,"spe":85},"mv":["rockthrow","peck"],"fly":true},
+  dratini:{"id":"0147","n":"Dratini","ty":["Dragon"],"mov":5,"st":{"hp":19,"atk":8,"def":6,"spa":6,"spd":6,"spe":6},"gr":{"hp":51,"atk":50,"def":40,"spa":43,"spd":43,"spe":43},"mv":["tackle","dragonrage"]},
+  ledyba:{"id":"0165","n":"Ledyba","ty":["Bug","Flying"],"mov":5,"st":{"hp":19,"atk":3,"def":4,"spa":5,"spd":10,"spe":7},"gr":{"hp":50,"atk":26,"def":32,"spa":37,"spd":59,"spe":45},"mv":["bugbite","gust"],"fly":true},
+  chinchou:{"id":"0170","n":"Chinchou","ty":["Water","Electric"],"mov":5,"st":{"hp":27,"atk":5,"def":5,"spa":7,"spd":7,"spe":8},"gr":{"hp":68,"atk":36,"def":36,"spa":46,"spd":46,"spe":52},"mv":["watergun","thundershock"]},
+  pichu:{"id":"0172","n":"Pichu","ty":["Electric"],"mov":5,"st":{"hp":14,"atk":5,"def":2,"spa":4,"spd":4,"spe":8},"gr":{"hp":40,"atk":37,"def":23,"spa":34,"spd":34,"spe":48},"mv":["tackle","thundershock"]},
+  cleffa:{"id":"0173","n":"Cleffa","ty":["Fairy"],"mov":4,"st":{"hp":21,"atk":3,"def":4,"spa":6,"spd":7,"spe":2},"gr":{"hp":55,"atk":29,"def":30,"spa":40,"spd":45,"spe":23},"mv":["pound","fairywind"]},
+  igglybuff:{"id":"0174","n":"Igglybuff","ty":["Normal","Fairy"],"mov":4,"st":{"hp":30,"atk":4,"def":2,"spa":5,"spd":3,"spe":2},"gr":{"hp":75,"atk":32,"def":23,"spa":37,"spd":26,"spe":23},"mv":["tackle","fairywind"]},
+  natu:{"id":"0177","n":"Natu","ty":["Psychic","Flying"],"mov":5,"st":{"hp":19,"atk":6,"def":6,"spa":9,"spd":6,"spe":9},"gr":{"hp":50,"atk":43,"def":40,"spa":54,"spd":40,"spe":54},"mv":["confusion","gust"],"fly":true},
+  hoppip:{"id":"0187","n":"Hoppip","ty":["Grass","Flying"],"mov":5,"st":{"hp":18,"atk":4,"def":5,"spa":4,"spd":7,"spe":6},"gr":{"hp":48,"atk":34,"def":37,"spa":34,"spd":45,"spe":43},"mv":["vinewhip","peck"],"fly":true},
+  aipom:{"id":"0190","n":"Aipom","ty":["Normal"],"mov":5,"st":{"hp":22,"atk":9,"def":7,"spa":5,"spd":7,"spe":11},"gr":{"hp":58,"atk":54,"def":45,"spa":37,"spd":45,"spe":62},"mv":["tackle","quickattack"]},
+  sunkern:{"id":"0191","n":"Sunkern","ty":["Grass"],"mov":4,"st":{"hp":17,"atk":4,"def":4,"spa":4,"spd":4,"spe":4},"gr":{"hp":45,"atk":32,"def":32,"spa":32,"spd":32,"spe":32},"mv":["tackle","vinewhip"]},
+  yanma:{"id":"0193","n":"Yanma","ty":["Bug","Flying"],"mov":6,"st":{"hp":24,"atk":8,"def":6,"spa":9,"spd":6,"spe":12},"gr":{"hp":63,"atk":51,"def":40,"spa":56,"spd":40,"spe":67},"mv":["bugbite","gust"],"fly":true},
+  murkrow:{"id":"0198","n":"Murkrow","ty":["Dark","Flying"],"mov":6,"st":{"hp":23,"atk":11,"def":5,"spa":11,"spd":5,"spe":11},"gr":{"hp":60,"atk":62,"def":38,"spa":62,"spd":38,"spe":65},"mv":["bite","peck"],"fly":true},
+  misdreavus:{"id":"0200","n":"Misdreavus","ty":["Ghost"],"mov":5,"st":{"hp":23,"atk":8,"def":8,"spa":11,"spd":11,"spe":11},"gr":{"hp":60,"atk":48,"def":48,"spa":62,"spd":62,"spe":62},"mv":["pound","lick"],"fly":true},
+  girafarig:{"id":"0203","n":"Girafarig","ty":["Normal","Psychic"],"mov":5,"st":{"hp":25,"atk":10,"def":8,"spa":11,"spd":8,"spe":11},"gr":{"hp":65,"atk":59,"def":51,"spa":65,"spd":51,"spe":62},"mv":["tackle","confusion"]},
+  pineco:{"id":"0204","n":"Pineco","ty":["Bug"],"mov":4,"st":{"hp":21,"atk":8,"def":11,"spa":4,"spd":4,"spe":2},"gr":{"hp":55,"atk":51,"def":65,"spa":34,"spd":34,"spe":23},"mv":["tackle","bugbite"]},
+  dunsparce:{"id":"0206","n":"Dunsparce","ty":["Normal"],"mov":5,"st":{"hp":32,"atk":9,"def":9,"spa":8,"spd":8,"spe":6},"gr":{"hp":80,"atk":54,"def":54,"spa":51,"spd":51,"spe":40},"mv":["tackle","bite"]},
+  gligar:{"id":"0207","n":"Gligar","ty":["Ground","Flying"],"mov":5,"st":{"hp":24,"atk":9,"def":13,"spa":4,"spd":8,"spe":11},"gr":{"hp":63,"atk":56,"def":73,"spa":34,"spd":51,"spe":62},"mv":["mudslap","peck"],"fly":true},
+  qwilfish:{"id":"0211","n":"Qwilfish","ty":["Water","Poison"],"mov":5,"st":{"hp":24,"atk":12,"def":11,"spa":7,"spd":7,"spe":11},"gr":{"hp":63,"atk":67,"def":62,"spa":45,"spd":45,"spe":62},"mv":["watergun","poisonsting"]},
+  shuckle:{"id":"0213","n":"Shuckle","ty":["Bug","Rock"],"mov":4,"st":{"hp":12,"atk":1,"def":13,"spa":1,"spd":13,"spe":1},"gr":{"hp":40,"atk":21,"def":85,"spa":21,"spd":85,"spe":18},"mv":["bugbite","rockthrow"]},
+  sneasel:{"id":"0215","n":"Sneasel","ty":["Dark","Ice"],"mov":6,"st":{"hp":22,"atk":12,"def":7,"spa":4,"spd":9,"spe":14},"gr":{"hp":58,"atk":67,"def":45,"spa":34,"spd":56,"spe":78},"mv":["bite","powdersnow"]},
+  teddiursa:{"id":"0216","n":"Teddiursa","ty":["Normal"],"mov":4,"st":{"hp":23,"atk":10,"def":6,"spa":6,"spd":6,"spe":5},"gr":{"hp":60,"atk":59,"def":43,"spa":43,"spd":43,"spe":37},"mv":["tackle","bite"]},
+  slugma:{"id":"0218","n":"Slugma","ty":["Fire"],"mov":4,"st":{"hp":19,"atk":5,"def":5,"spa":9,"spd":5,"spe":3},"gr":{"hp":50,"atk":37,"def":37,"spa":54,"spd":37,"spe":26},"mv":["pound","ember"]},
+  swinub:{"id":"0220","n":"Swinub","ty":["Ice","Ground"],"mov":5,"st":{"hp":21,"atk":6,"def":5,"spa":4,"spd":4,"spe":6},"gr":{"hp":55,"atk":43,"def":37,"spa":32,"spd":32,"spe":43},"mv":["powdersnow","mudslap"]},
+  corsola:{"id":"0222","n":"Corsola","ty":["Water","Rock"],"mov":4,"st":{"hp":24,"atk":7,"def":12,"spa":8,"spd":12,"spe":4},"gr":{"hp":63,"atk":45,"def":67,"spa":51,"spd":67,"spe":34},"mv":["watergun","rockthrow"]},
+  remoraid:{"id":"0223","n":"Remoraid","ty":["Water"],"mov":5,"st":{"hp":18,"atk":8,"def":4,"spa":8,"spd":4,"spe":8},"gr":{"hp":48,"atk":51,"def":34,"spa":51,"spd":34,"spe":51},"mv":["tackle","watergun"]},
+  delibird:{"id":"0225","n":"Delibird","ty":["Ice","Flying"],"mov":5,"st":{"hp":20,"atk":7,"def":6,"spa":8,"spd":6,"spe":9},"gr":{"hp":53,"atk":45,"def":40,"spa":51,"spd":40,"spe":56},"mv":["powdersnow","gust"],"fly":true},
+  mantine:{"id":"0226","n":"Mantine","ty":["Water","Flying"],"mov":5,"st":{"hp":25,"atk":4,"def":7,"spa":8,"spd":13,"spe":7},"gr":{"hp":73,"atk":37,"def":54,"spa":59,"spd":85,"spe":54},"mv":["watergun","gust"],"fly":true},
+  skarmory:{"id":"0227","n":"Skarmory","ty":["Steel","Flying"],"mov":5,"st":{"hp":20,"atk":8,"def":13,"spa":4,"spd":7,"spe":7},"gr":{"hp":63,"atk":59,"def":85,"spa":37,"spd":54,"spe":54},"mv":["metalclaw","peck"],"fly":true},
+  houndour:{"id":"0228","n":"Houndour","ty":["Dark","Fire"],"mov":5,"st":{"hp":20,"atk":8,"def":4,"spa":10,"spd":6,"spe":8},"gr":{"hp":53,"atk":48,"def":32,"spa":59,"spd":43,"spe":51},"mv":["bite","ember"]},
+  phanpy:{"id":"0231","n":"Phanpy","ty":["Ground"],"mov":4,"st":{"hp":30,"atk":8,"def":8,"spa":5,"spd":5,"spe":5},"gr":{"hp":75,"atk":48,"def":48,"spa":37,"spd":37,"spe":37},"mv":["tackle","mudslap"]},
+  stantler:{"id":"0234","n":"Stantler","ty":["Normal"],"mov":5,"st":{"hp":26,"atk":12,"def":8,"spa":11,"spd":8,"spe":11},"gr":{"hp":67,"atk":67,"def":49,"spa":62,"spd":51,"spe":62},"mv":["tackle","quickattack"]},
+  tyrogue:{"id":"0236","n":"Tyrogue","ty":["Fighting"],"mov":4,"st":{"hp":18,"atk":4,"def":4,"spa":4,"spd":4,"spe":4},"gr":{"hp":48,"atk":34,"def":34,"spa":34,"spd":34,"spe":34},"mv":["tackle","lowkick"]},
+  smoochum:{"id":"0238","n":"Smoochum","ty":["Ice","Psychic"],"mov":5,"st":{"hp":20,"atk":4,"def":2,"spa":11,"spd":8,"spe":8},"gr":{"hp":53,"atk":32,"def":23,"spa":62,"spd":51,"spe":51},"mv":["powdersnow","confusion"]},
+  elekid:{"id":"0239","n":"Elekid","ty":["Electric"],"mov":6,"st":{"hp":20,"atk":8,"def":5,"spa":8,"spd":7,"spe":12},"gr":{"hp":53,"atk":50,"def":35,"spa":51,"spd":45,"spe":67},"mv":["pound","thundershock"]},
+  magby:{"id":"0240","n":"Magby","ty":["Fire"],"mov":5,"st":{"hp":20,"atk":9,"def":5,"spa":9,"spd":7,"spe":10},"gr":{"hp":53,"atk":56,"def":35,"spa":54,"spd":45,"spe":61},"mv":["tackle","flamewheel"]},
+  miltank:{"id":"0241","n":"Miltank","ty":["Normal"],"mov":6,"st":{"hp":26,"atk":8,"def":10,"spa":4,"spd":7,"spe":10},"gr":{"hp":78,"atk":59,"def":73,"spa":37,"spd":54,"spe":70},"mv":["tackle","quickattack"]},
+  larvitar:{"id":"0246","n":"Larvitar","ty":["Rock","Ground"],"mov":5,"st":{"hp":21,"atk":8,"def":6,"spa":6,"spd":6,"spe":5},"gr":{"hp":55,"atk":50,"def":43,"spa":40,"spd":43,"spe":38},"mv":["rockthrow","mudslap"]},
+};
+const AUTO_POOLS = {"kanto":{"rare":["bulbasaur","charmander","squirtle","pikachu","hitmonlee","hitmonchan","chansey","kangaskhan","mrmime","scyther","jynx","electabuzz","magmar","pinsir","tauros","lapras","eevee","aerodactyl","dratini"],"uncommon":["sandshrew","clefairy","oddish","venonat","psyduck","mankey","growlithe","poliwag","abra","machop","bellsprout","tentacool","geodude","ponyta","slowpoke","magnemite","farfetchd","doduo","seel","grimer","shellder","gastly","drowzee","krabby","voltorb","exeggcute","cubone","lickitung","koffing","rhyhorn","tangela","goldeen","staryu","porygon","omanyte","kabuto"],"common":["caterpie","weedle","pidgey","rattata","spearow","ekans","nidoranf","nidoranm","vulpix","jigglypuff","zubat","paras","diglett","meowth","horsea","magikarp"]},"johto":{"rare":["chikorita","cyndaquil","totodile","togepi","mareep","girafarig","shuckle","mantine","skarmory","stantler","miltank","larvitar"],"uncommon":["chinchou","natu","sudowoodo","aipom","yanma","murkrow","misdreavus","dunsparce","gligar","snubbull","qwilfish","sneasel","teddiursa","corsola","remoraid","delibird","houndour","phanpy","smoochum","elekid","magby"],"common":["sentret","hoothoot","ledyba","spinarak","pichu","cleffa","igglybuff","marill","hoppip","sunkern","wooper","pineco","slugma","swinub","tyrogue"]}};
+for(const k in AUTO_SPECIES) if(!SPECIES[k]) SPECIES[k]=AUTO_SPECIES[k];
 for(const k in SPECIES) SPECIES[k].key=k;
 
 // Regions are data: add a region here (pool + army roles + bosses) and a route below to make a new campaign.
 const REGIONS = {
   kanto:{region:'Kanto',starters:['bulbasaur','charmander','squirtle'],partner:'pikachu',
-    pool:{rare:['bulbasaur','charmander','squirtle','pikachu','eevee'],uncommon:['growlithe','machop','geodude','poliwag','oddish'],common:['rattata','pidgey']},
+    pool:AUTO_POOLS.kanto,
     roles:{fast:'rattata',bird:'pidgey',swim:'poliwag',tank:'geodude',mid:'growlithe',poison:'oddish',heavy:'machop'},
     bosses:['machop','onix','arcanine','snorlax']},
   johto:{region:'Johto',starters:['chikorita','cyndaquil','totodile'],partner:'mareep',
-    pool:{rare:['chikorita','cyndaquil','totodile','mareep','togepi'],uncommon:['sudowoodo','marill','snubbull','wooper'],common:['sentret','hoothoot','spinarak']},
+    pool:AUTO_POOLS.johto,
     roles:{fast:'sentret',bird:'hoothoot',swim:'wooper',tank:'marill',mid:'snubbull',poison:'spinarak',heavy:'sudowoodo'},
     bosses:['sudowoodo','heracross','ursaring','steelix']},
 };
@@ -331,15 +438,17 @@ const sideInfo=t=>t==='p'?{name:route.team,region:REGIONS[route.you].region,col:
 const DIRS = {'0,1':0,'1,1':1,'1,0':2,'1,-1':3,'0,-1':4,'-1,-1':5,'-1,0':6,'-1,1':7};
 
 // ---------- assets ----------
-const IMG = {}, PORT = {};
-function loadImages(){
-  return Promise.all(Object.keys(ATLAS).map(k=>new Promise(res=>{const im=new Image();im.onload=()=>{IMG[k]=im;
-    PORT[k]={}; for(const e in ATLAS[k].port){const [x,y]=ATLAS[k].port[e];const c=document.createElement('canvas');c.width=c.height=40;c.getContext('2d').drawImage(im,x,y,40,40,0,0,40,40);PORT[k][e]=c.toDataURL();}
-    res();};im.onerror=()=>res();im.src='atlas/'+k+'.png';})));
-}
+const IMG = {}, LOADING = {};
+// Sprite sheets load on demand (only the Pokémon on screen), so the game starts fast.
+function loadAtlas(k){ if(IMG[k]) return Promise.resolve(); if(LOADING[k]) return LOADING[k];
+  return LOADING[k]=new Promise(res=>{const im=new Image();im.onload=()=>{IMG[k]=im;res();};im.onerror=()=>res();im.src='atlas/'+k+'.png';}); }
 function setKey(sk,shiny){const id=SPECIES[sk].id;return shiny&&ATLAS[id+'s']?id+'s':id;}
-function portraitOf(sk,shiny,emo='Normal'){const k=setKey(sk,shiny);const P=PORT[k]||{};return P[emo]||P.Normal||'';}
-function portraitSrc(u,emo='Normal'){return portraitOf(u.sp.key,u.shiny,emo);}
+function portrait(sk,shiny,emo='Normal',cls='portrait'){
+  const id=SPECIES[sk].id, P=(shiny&&PORTS[id+'s'])||PORTS[id]||{}, xy=P[emo]||P.Normal||[0,0];
+  const f=shiny&&!PORTS[id+'s']?'filter:hue-rotate(140deg) saturate(1.3);':'';
+  return `<span class="${cls} pt" style="background-position:-${xy[0]}px -${xy[1]}px;${f}"></span>`;
+}
+
 
 // ---------- state ----------
 let units=[], turn=1, phase='p', state='select', sel=null, reach=null, origin=null, hover=null, target=null, fcMove=0;
@@ -352,7 +461,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const sleep=ms=>new Promise(r=>setTimeout(r,ms/SPEED));
 
 // ---------- rules ----------
-const STAB_HIT=15; const BASE_AVO=20; // same-type moves are more accurate (replaces Pokémon's STAB damage)
+const STAB_HIT=15; const BASE_AVO=20; // base Avoid applies to your Pokémon only // same-type moves are more accurate (replaces Pokémon's STAB damage)
 function typeDmg(e){return e>=4?1.25:e>=2?1.1:e===0?0:e<=0.25?0.75:e<1?0.9:1;}
 // FE-style 2RN: average of two rolls, so high hits land more often and low hits less. Returns the true %.
 function trueHit(h){h=clamp(Math.round(h),0,100);let n=0;for(let a=0;a<100;a++){const k=2*h-1-a;n+=clamp(k+1,0,100);}return Math.round(n/100);}
@@ -401,7 +510,7 @@ function strikeCalc(a,d,mi,ax,ay,dx,dy){
   const dmg=e===0?0:Math.max(0,Math.round((st+M.pow)*typeDmg(e))-df);
   const th=typeHit(e);
   const stab=a.sp.ty.includes(M.t)?STAB_HIT:0;
-  const hit=e===0?0:trueHit(M.acc+a.spe+th+stab-(d.spe*2+BASE_AVO+terrAvo(d,dx,dy)));
+  const hit=e===0?0:trueHit(M.acc+a.spe+th+stab-(d.spe*2+(d.team==='p'?BASE_AVO:0)+terrAvo(d,dx,dy)));
   const crit=e===0?0:clamp(M.crit+Math.floor(a.spe/4),0,100);
   const as=a.spe+(M.fx==='quick'?4:0)-(M.fx==='heavy'?3:0);
   return {mi,dmg,hit,crit,eff:e,th,stab,as};
@@ -459,7 +568,7 @@ function buildMap(){
   for(let x=0;x<=MW;x++){g.beginPath();g.moveTo(x*T+.5,0);g.lineTo(x*T+.5,MH*T);g.stroke();}
   for(let y=0;y<=MH;y++){g.beginPath();g.moveTo(0,y*T+.5);g.lineTo(MW*T,y*T+.5);g.stroke();}
 }
-function animInfo(u,name){const k=setKey(u.sp.key,u.shiny), A=ATLAS[k].anims;const a=A[name]||(name==='Shoot'?A.Attack:null)||A.Idle;return {...a,k};}
+function animInfo(u,name){const k=setKey(u.sp.key,u.shiny), A=ATLAS[k].anims; loadAtlas(k);const a=A[name]||(name==='Shoot'?A.Attack:null)||A.Idle;return {...a,k};}
 function animLen(a){return a.d.reduce((s,v)=>s+v,0)*1000/60;}
 function frameAt(a,t,loop){const tot=a.d.reduce((s,v)=>s+v,0);let f=t*60/1000;if(loop)f%=tot;else f=Math.min(f,tot-0.01);let acc=0;for(let i=0;i<a.d.length;i++){acc+=a.d[i];if(f<acc)return i;}return a.d.length-1;}
 
@@ -512,7 +621,7 @@ function drawUnit(u){
   ctx.fillStyle='rgba(0,0,0,.28)'; ctx.beginPath(); ctx.ellipse(gx,gy,15,6,0,0,7); ctx.fill();
   ctx.strokeStyle=sideInfo(u.team).col; ctx.lineWidth=2.5; ctx.beginPath(); ctx.ellipse(gx,gy,17,7,0,0,7); ctx.stroke();
   if(im){ const g=(u.done&&phase==='p'&&u.team==='p')||(u.team==='e'&&u.done&&phase==='e');
-    if(g) ctx.filter='grayscale(100%) brightness(75%)';
+    if(g) ctx.filter='grayscale(100%) brightness(75%)'; else if(u.shiny&&!a.k.endsWith('s')) ctx.filter='hue-rotate(140deg) saturate(1.3)';
     ctx.drawImage(im,fi*a.w,a.y+u.dir*a.h,a.w,a.h,Math.round(gx-a.w*S/2),Math.round(gy-4*S-a.h*S/2),a.w*S,a.h*S);
     ctx.filter='none';
     if(u.flash>0){ ctx.globalCompositeOperation='lighter'; ctx.globalAlpha=u.flash*u.alpha; ctx.drawImage(im,fi*a.w,a.y+u.dir*a.h,a.w,a.h,Math.round(gx-a.w*S/2),Math.round(gy-4*S-a.h*S/2),a.w*S,a.h*S); ctx.globalCompositeOperation='source-over'; u.flash=Math.max(0,u.flash-.06*SPEED); }
@@ -605,7 +714,7 @@ async function levelUp(u){
   if(!any){u.maxhp++;u.hp++;}
   const lab={maxhp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'};
   const cells=Object.keys(lab).map(k=>`<div>${lab[k]} <b class="${u[k]>before[k]?'up':''}">${u[k]}${u[k]>before[k]?' ▲':''}</b></div>`).join('');
-  await showPopup(`<img class="portrait" src="${portraitSrc(u,'Happy')}"><h2>${u.sp.n} grew to Lv ${u.lv}!</h2><div class="lv">${cells}</div>`, 2200);
+  await showPopup(`${portrait(u.sp.key,u.shiny,'Happy')}<h2>${u.sp.n} grew to Lv ${u.lv}!</h2><div class="lv">${cells}</div>`, 2200);
 }
 
 // ---------- enemy AI ----------
@@ -672,7 +781,7 @@ function renderInfo(){
   if(!u){ el.innerHTML='<h3>Unit</h3><div style="color:var(--mute);font-size:14px">Hover or tap a Pokémon.</div>'; }
   else{
     el.innerHTML=`<h3>${u.team==='p'?'Ally':'Enemy'}${u.boss?' · Boss':''}${u.guard?' · Guard':''}</h3>
-    <div class="uhead"><img class="portrait" src="${portraitSrc(u,u.hp<u.maxhp*.35?'Pain':u.team==='e'?'Determined':'Normal')}">
+    <div class="uhead">${portrait(u.sp.key,u.shiny,u.hp<u.maxhp*.35?'Pain':'Normal')}
     <div><div class="uname ${u.team==='p'?'team-p':'team-e'}">${u.sp.n}</div><div>Lv ${u.lv} ${u.team==='p'?`<span style="color:var(--mute);font-size:13px">EXP ${u.exp}/100</span>`:''}</div><div class="types">${typeTags(u.sp.ty)}</div></div></div>
     <div class="hpbar"><i style="width:${100*u.hp/u.maxhp}%"></i></div><div style="font-size:14px">HP ${u.hp}/${u.maxhp}</div>
     <div class="stats"><div><span>Atk</span> ${u.atk}</div><div><span>Def</span> ${u.def}</div><div><span>Mov</span> ${u.mov}</div><div><span>SpA</span> ${u.spa}</div><div><span>SpD</span> ${u.spd}</div><div><span>Spe</span> ${u.spe}</div></div>
@@ -714,7 +823,7 @@ function renderItems(){
   const mv=u.moves[itemSel], M=MOVES[mv.k];
   const st=M.c==='P'?u.atk:u.spa, stab=u.sp.ty.includes(M.t)?STAB_HIT:0;
   const as=u.spe+(M.fx==='quick'?4:0)-(M.fx==='heavy'?3:0);
-  const avo=u.spe*2+BASE_AVO+terrAvo(u,u.x,u.y);
+  const avo=u.spe*2+(u.team==='p'?BASE_AVO:0)+terrAvo(u,u.x,u.y);
   const foes=units.filter(o=>o.alive&&o.team!==u.team&&inRange(mv,dist(u.x,u.y,o.x,o.y)));
   const rows=foes.map(o=>{const f=forecast(u,o,itemSel);const A=f.A;const ko=A.dmg*(f.Adbl?2:1)>=o.hp;
     return `<tr><td class="team-e">${o.sp.n}</td><td>${A.dmg}${f.Adbl&&A.dmg>0?'×2':''} ${effTag(A.eff)}</td><td>${A.hit}%</td><td>${A.crit}%</td><td><b>${expDmg(A,f.Adbl).toFixed(1)}</b>${ko?' <span class="eff2">KO</span>':''}</td></tr>`;}).join('');
@@ -850,7 +959,9 @@ function pull(){
 function canLearn(rec,mk){const M=MOVES[mk];return (M.t==='Normal'||SPECIES[rec.sk].ty.includes(M.t))&&!rec.moves.includes(mk);}
 
 // ---------- chapter flow ----------
-function startChapter(ci,keys){
+async function startChapter(ci,keys){
+  await Promise.all([...keys.map(k=>loadAtlas(setKey(save.roster[k].sk,save.roster[k].shiny))),
+    ...CHAPTERS[ci].army.map(([role])=>loadAtlas(SPECIES[role==='boss'?REGIONS[route.foe].bosses[ci]:REGIONS[route.foe].roles[role]].id))]);
   chapter=ci; const C=CHAPTERS[ci]; MAP=C.map; buildMap();
   const R2=REGIONS[route.foe];
   document.documentElement.style.setProperty('--pc',route.col); document.documentElement.style.setProperty('--ec',route.foeCol);
@@ -900,7 +1011,7 @@ const TIER_COL={rare:'#ffd84a',uncommon:'#6fb6ff',common:'#b9bfd6'};
 function monCard(r,key,opts={}){
   const sp=SPECIES[r.sk];
   return `<${opts.btn?'button':'div'} class="mon ${opts.sel?'sel':''}" ${opts.btn?`data-k="${key}" ${opts.disabled?'disabled':''}`:''}>
-    <img class="mp" src="${portraitOf(r.sk,r.shiny)}"><div class="mi"><div class="mn">${sp.n}${r.shiny?' <span class="shiny">✦ Shiny</span>':''}</div>
+    ${portrait(r.sk,r.shiny,'Normal','mp')}<div class="mi"><div class="mn">${sp.n}${r.shiny?' <span class="shiny">✦ Shiny</span>':''}</div>
     <div class="ms">Lv ${r.lv} · HP ${r.st.hp} · Atk ${r.st.atk} · Def ${r.st.def} · SpA ${r.st.spa} · SpD ${r.st.spd} · Spe ${r.st.spe}</div>
     <div class="types">${typeTags(sp.ty)}</div><div class="ms">${r.moves.map(k=>MOVES[k].n).join(' · ')}</div>${opts.extra||''}</div></${opts.btn?'button':'div'}>`;
 }
@@ -909,7 +1020,7 @@ function showRoutes(){
   const card=rt=>{ if(rt.locked) return `<button class="pick" disabled style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${rt.blurb}</div></button>`;
     const R=REGIONS[rt.you], sv=SAVES[rt.id];
     return `<button class="pick" data-rt="${rt.id}" style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${R.region} vs ${REGIONS[rt.foe].region}</div>
-      <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`<img src="${portraitOf(sk,false)}">`).join('')}</div>
+      <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`${portrait(sk,false,'Normal','p40')}`).join('')}</div>
       <div class="pick-s">${sv?`Saved · ${sv.cleared.filter(Boolean).length}/${CHAPTERS.length} chapters · ${Object.keys(sv.roster).length} Pokémon`:rt.blurb}</div></button>`;};
   showScreen(`<div class="titlebg"><iframe id="ytbg" src="https://www.youtube.com/embed/${TITLE_VIDEO}?autoplay=1&mute=1&loop=1&playlist=${TITLE_VIDEO}&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" title="Title video" tabindex="-1"></iframe><div class="shade"></div></div>
     <button id="snd" class="sndbtn">🔇 Sound</button>
@@ -921,9 +1032,9 @@ function showRoutes(){
 }
 function showStarter(){
   const R=REGIONS[route.you], pp=SPECIES[R.partner];
-  const card=sk=>{const sp=SPECIES[sk];return `<button class="pick" data-sk="${sk}" style="border-color:${route.col}"><img class="portrait" src="${portraitOf(sk,false)}"><div class="pick-t">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="pick-s">${sp.mv.map(k=>MOVES[k].n).join(' · ')}</div></button>`;};
+  const card=sk=>{const sp=SPECIES[sk];return `<button class="pick" data-sk="${sk}" style="border-color:${route.col}">${portrait(sk,false)}<div class="pick-t">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="pick-s">${sp.mv.map(k=>MOVES[k].n).join(' · ')}</div></button>`;};
   showScreen(`<h2 style="color:${route.col}">${route.name}: pick your starter</h2><div class="picks">${R.starters.map(card).join('')}</div>
-    <div class="partner"><img src="${portraitOf(R.partner,false,'Happy')}"><span><b>${pp.n}</b> joins you as your partner.</span></div>
+    <div class="partner">${portrait(R.partner,false,'Happy','p48')}<span><b>${pp.n}</b> joins you as your partner.</span></div>
     <div class="row" style="max-width:300px;margin:12px auto"><button id="bk">Back</button></div>`);
   screen.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{save=SAVES[route.id]=newSave(b.dataset.sk);persist();showChapters();});
   document.getElementById('bk').onclick=showRoutes;
@@ -937,7 +1048,7 @@ function showChapters(){
     return `<div class="chap ${locked?'locked':''}"><div class="cn">Chapter ${i+1}${save.cleared[i]?' <span class="eff2">✓ cleared</span>':''}</div><div class="ct">${C.name}</div>
       <div class="ms">${C.goal==='boss'?'Defeat the boss':'Rout the enemy'} · Deploy ${C.max} · ${C.army.length} enemies</div>
       <div class="lvr">Enemies Lv ${C.elv[0]}–${C.elv[1]} · Boss Lv ${C.blv}</div>
-      <div class="cb"><img src="${portraitOf(boss.key,false)}"><span>Boss: <b>${boss.n}</b></span></div>
+      <div class="cb">${portrait(boss.key,false,'Normal','p40')}<span>Boss: <b>${boss.n}</b></span></div>
       <div class="ms">Reward: ₽${save.cleared[i]?Math.round(C.reward*.4)+' (replay)':C.reward+(C.tokens?` + ${C.tokens} TM token${C.tokens>1?'s':''}`:'')}</div>
       <button class="primary" data-ch="${i}" ${locked?'disabled':''}>${locked?'Locked':'Deploy'}</button></div>`;}).join('');
   const L=Object.values(save.roster).map(r=>r.lv), top=[...L].sort((a,b)=>b-a);
@@ -971,7 +1082,7 @@ function showDeploy(ci){
     screen.querySelectorAll('.mon[data-k]').forEach(b=>b.onclick=()=>{const k=b.dataset.k;const i=deploySel.indexOf(k);
       if(i>=0) deploySel.splice(i,1); else if(deploySel.length<C.max) deploySel.push(k); render();});
     document.getElementById('bk').onclick=showChapters;
-    document.getElementById('go').onclick=async()=>{startChapter(ci,deploySel);busy=true;await banner(`CHAPTER ${ci+1}: ${C.name.toUpperCase()}`,'p');busy=false;};
+    document.getElementById('go').onclick=async()=>{await startChapter(ci,deploySel);busy=true;await banner(`CHAPTER ${ci+1}: ${C.name.toUpperCase()}`,'p');busy=false;};
   };
   render();
 }
@@ -981,10 +1092,10 @@ function showTeam(){
 }
 function showRecruit(results){
   const P=REGIONS[route.you].pool;
-  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<div class="pool ${n||s?'':'dim'}"><img src="${portraitOf(sk,!!s&&!n)}"><span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></div>`;};
+  const own=sk=>{const n=save.roster[rkeyOf(sk,false)],s=save.roster[rkeyOf(sk,true)];return `<div class="pool ${n||s?'':'dim'}">${portrait(sk,!!s&&!n,'Normal','p32')}<span>${SPECIES[sk].n}</span><span class="pm">${n?'●':''}${s?'<span class="shiny">✦</span>':''}${!s&&(save.meters[sk]||0)?` ${save.meters[sk]}/${SHINY_METER}`:''}</span></div>`;};
   const res=(results||[]).map((r,i)=>{const sp=SPECIES[r.sk];
     const t={new:'<b class="eff2">NEW!</b>',shiny:'<b class="shiny">✦ SHINY!</b>','meter-shiny':'<b class="shiny">✦ Meter full: SHINY!</b>',meter:`Shiny meter ${r.meter}/${SHINY_METER} · +1 TM token`,tokens:`Already complete · +${r.tok} TM tokens`}[r.kind];
-    return `<div class="res ${r.shiny?'sh':''}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div><img src="${portraitOf(r.sk,r.shiny)}"><div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
+    return `<div class="res ${r.shiny?'sh':''}" style="animation-delay:${i*0.15}s;border-color:${TIER_COL[r.tier]}"><div class="rt" style="color:${TIER_COL[r.tier]}">${r.tier}</div>${portrait(r.sk,r.shiny,'Normal','p80')}<div class="mn">${sp.n}</div><div class="types" style="justify-content:center">${typeTags(sp.ty)}</div><div class="ms">${t}</div></div>`;}).join('');
   showScreen(`${topBar()}<h2>Recruit</h2>
     <div class="gbar"><button class="primary" id="p1" ${save.money<PULL_COST?'disabled':''}>Pull ×1 · ₽${PULL_COST}</button><button class="primary" id="p5" ${save.money<PULL_COST*5?'disabled':''}>Pull ×5 · ₽${PULL_COST*5}</button>
       <span class="ms">Rare guaranteed in ${RARE_PITY-save.pity} · 5% shiny · repeats fill a ${SHINY_METER}-step shiny meter, then turn into TM tokens</span></div>
@@ -1019,10 +1130,10 @@ function showShop(tm=null,key=null){
 }
 
 // test hooks
-window.__game={newRoute:(rid,st)=>{route=ROUTES.find(r=>r.id===rid);save=SAVES[rid]=newSave(st);},start:(ci,keys)=>startChapter(ci,keys||Object.keys(save.roster).slice(0,CHAPTERS[ci].max)),get save(){return save},pull,addRec,get units(){return units},forecast,MOVES,SPECIES,CHAPTERS,onTile,endPlayerPhase,setSpeed:s=>SPEED=s,get state(){return state},get over(){return over},get turn(){return turn},planAttack,enemyAct,checkEnd,get phase(){return phase},showChapters,showRecruit,showShop,showDeploy};
+window.__game={newRoute:(rid,st)=>{route=ROUTES.find(r=>r.id===rid);save=SAVES[rid]=newSave(st);},start:async(ci,keys)=>await startChapter(ci,keys||Object.keys(save.roster).slice(0,CHAPTERS[ci].max)),get save(){return save},pull,addRec,get units(){return units},forecast,MOVES,SPECIES,CHAPTERS,onTile,endPlayerPhase,setSpeed:s=>SPEED=s,get state(){return state},get over(){return over},get turn(){return turn},planAttack,enemyAct,checkEnd,get phase(){return phase},showChapters,showRecruit,showShop,showDeploy};
 
 MAP=CHAPTERS[0].map; buildMap(); loadSaves(); updateHUD();
-Promise.all([loadImages(),document.fonts?document.fonts.load("700 20px 'Pixelify Sans'").catch(()=>{}):0]).then(()=>{showRoutes();requestAnimationFrame(frame);});
+Promise.all([document.fonts?document.fonts.load("700 20px 'Pixelify Sans'").catch(()=>{}):0]).then(()=>{showRoutes();requestAnimationFrame(frame);});
 </script>
 </body>
 </html>
