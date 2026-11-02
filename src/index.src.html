@@ -80,7 +80,9 @@ aside{width:300px;flex:none;display:flex;flex-direction:column;gap:10px}
 #screen{position:fixed;inset:0;z-index:20;background:radial-gradient(ellipse at top,#1d2750,#0b0f1d 70%);overflow:auto;display:none}
 .scr{position:relative;max-width:1000px;margin:0 auto;padding:18px 14px 40px;text-align:center}
 .titlebg{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;background:radial-gradient(ellipse at top,#2a3a78,#0b0f1d 70%)}
-.titlebg iframe{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%);border:0}
+.titlebg .yt{position:absolute;top:50%;left:50%;width:177.78vh;height:56.25vw;min-width:100%;min-height:100%;transform:translate(-50%,-50%) scale(1.3);opacity:0;transition:opacity 1.2s ease}
+.titlebg .yt.on{opacity:1}
+.titlebg .yt iframe{width:100%;height:100%;border:0;pointer-events:none}
 .titlebg .shade{position:absolute;inset:0;background:linear-gradient(#0b0f1d99,#0b0f1dcc)}
 #screen{isolation:isolate}
 .sndbtn{position:fixed;right:14px;top:12px;z-index:2}
@@ -1024,6 +1026,26 @@ function monCard(r,key,opts={}){
     <div class="ms">Lv ${r.lv} · HP ${r.st.hp} · Atk ${r.st.atk} · Def ${r.st.def} · SpA ${r.st.spa} · SpD ${r.st.spd} · Spe ${r.st.spe}</div>
     <div class="types">${typeTags(sp.ty)}</div><div class="ms">${r.moves.map(k=>MOVES[k].n).join(' · ')}</div>${opts.extra||''}</div></${opts.btn?'button':'div'}>`;
 }
+// ---------- title video ----------
+// Uses the YouTube player API so the video stays invisible until it is actually playing:
+// no play button, no loading spinner. Edges are cropped (scale 1.3) to hide the title bar and logo.
+let titlePlayer=null, titleSound=false;
+function startTitleVideo(){
+  const make=()=>{ const el=document.getElementById('ytbg'); if(!el) return;
+    titlePlayer=new YT.Player(el,{videoId:TITLE_VIDEO,host:'https://www.youtube-nocookie.com',
+      playerVars:{autoplay:1,mute:1,controls:0,disablekb:1,fs:0,iv_load_policy:3,modestbranding:1,playsinline:1,rel:0,loop:1,playlist:TITLE_VIDEO},
+      events:{
+        onReady:e=>{ try{ titleSound?e.target.unMute():e.target.mute(); e.target.playVideo(); }catch(err){} },
+        onStateChange:e=>{ const box=document.querySelector('.titlebg .yt'); if(!box) return;
+          if(e.data===YT.PlayerState.PLAYING) box.classList.add('on');
+          if(e.data===YT.PlayerState.ENDED){ e.target.seekTo(0); e.target.playVideo(); } } }});
+  };
+  if(window.YT&&YT.Player) make();
+  else { window.onYouTubeIframeAPIReady=make;
+    if(!document.getElementById('ytapi')){ const sc=document.createElement('script'); sc.id='ytapi'; sc.src='https://www.youtube.com/iframe_api'; document.head.appendChild(sc); } }
+}
+// Some browsers block autoplay until the first tap; nudge the video on any interaction.
+document.addEventListener('pointerdown',()=>{ if(titlePlayer&&titlePlayer.playVideo&&document.querySelector('.titlebg')){ try{ titlePlayer.playVideo(); }catch(e){} } },{passive:true});
 function showRoutes(){
   route=null; units=[]; draw();
   const card=rt=>{ if(rt.locked) return `<button class="pick" disabled style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${rt.blurb}</div></button>`;
@@ -1031,12 +1053,14 @@ function showRoutes(){
     return `<button class="pick" data-rt="${rt.id}" style="border-color:${rt.col}"><div class="pick-t" style="color:${rt.col}">${rt.name}</div><div class="pick-s">${R.region} vs ${REGIONS[rt.foe].region}</div>
       <div class="pick-imgs">${[...R.starters,R.partner].map(sk=>`${portrait(sk,false,'Normal','p40')}`).join('')}</div>
       <div class="pick-s">${sv?`Saved · ${sv.cleared.filter(Boolean).length}/${CHAPTERS.length} chapters · ${Object.keys(sv.roster).length} Pokémon`:rt.blurb}</div></button>`;};
-  showScreen(`<div class="titlebg"><iframe id="ytbg" src="https://www.youtube.com/embed/${TITLE_VIDEO}?autoplay=1&mute=1&loop=1&playlist=${TITLE_VIDEO}&controls=0&modestbranding=1&playsinline=1&rel=0&enablejsapi=1" allow="autoplay; encrypted-media" title="Title video" tabindex="-1"></iframe><div class="shade"></div></div>
+  showScreen(`<div class="titlebg"><div class="yt"><div id="ytbg"></div></div><div class="shade"></div></div>
     <button id="snd" class="sndbtn">🔇 Sound</button>
     <h1 class="st">Pokémon <span>War</span></h1><h2>Choose your army</h2><div class="picks">${ROUTES.map(card).join('')}</div>
     <p class="note">Each army recruits only its own region's Pokémon. Progress saves in this browser.</p>`);
-  const snd=document.getElementById('snd'); let on=false;
-  snd.onclick=()=>{on=!on; const f=document.getElementById('ytbg'); try{f.contentWindow.postMessage(JSON.stringify({event:'command',func:on?'unMute':'mute',args:[]}),'*');}catch(e){} snd.textContent=on?'🔊 Sound':'🔇 Sound';};
+  const snd=document.getElementById('snd');
+  startTitleVideo();
+  snd.onclick=()=>{ titleSound=!titleSound; if(titlePlayer){ try{ titleSound?titlePlayer.unMute():titlePlayer.mute(); titlePlayer.playVideo(); }catch(e){} } snd.textContent=titleSound?'🔊 Sound':'🔇 Sound'; };
+  snd.textContent=titleSound?'🔊 Sound':'🔇 Sound';
   screen.querySelectorAll('[data-rt]').forEach(b=>b.onclick=()=>{route=ROUTES.find(r=>r.id===b.dataset.rt); if(SAVES[route.id]){save=SAVES[route.id];showChapters();} else showStarter();});
 }
 function showStarter(){
